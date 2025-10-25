@@ -4,6 +4,17 @@ import type { CancelablePromise } from "./core/CancelablePromise"
 import { OpenAPI } from "./core/OpenAPI"
 import { request as __request } from "./core/request"
 import type {
+  ApplicationsListApplicationsEndpointResponse,
+  ApplicationsSubmitApplicationEndpointData,
+  ApplicationsSubmitApplicationEndpointResponse,
+  ApplicationsGetApplicationEndpointData,
+  ApplicationsGetApplicationEndpointResponse,
+  FilesUploadFileAndCreateData,
+  FilesUploadFileAndCreateResponse,
+  FilesDownloadFileEndpointData,
+  FilesDownloadFileEndpointResponse,
+  FilesDeleteFileEndpointData,
+  FilesDeleteFileEndpointResponse,
   ItemsReadItemsData,
   ItemsReadItemsResponse,
   ItemsCreateItemData,
@@ -14,6 +25,13 @@ import type {
   ItemsUpdateItemResponse,
   ItemsDeleteItemData,
   ItemsDeleteItemResponse,
+  JobsListJobListingsResponse,
+  JobsCreateJobListingData,
+  JobsCreateJobListingResponse,
+  JobsParseJobListingData,
+  JobsParseJobListingResponse,
+  JobsParseJobListingFileData,
+  JobsParseJobListingFileResponse,
   LoginLoginAccessTokenData,
   LoginLoginAccessTokenResponse,
   LoginTestTokenResponse,
@@ -23,6 +41,20 @@ import type {
   LoginResetPasswordResponse,
   LoginRecoverPasswordHtmlContentData,
   LoginRecoverPasswordHtmlContentResponse,
+  PrivateCreateUserData,
+  PrivateCreateUserResponse,
+  ResumesListResumesEndpointResponse,
+  ResumesUploadResumeEndpointData,
+  ResumesUploadResumeEndpointResponse,
+  ResumesGetResumeEndpointData,
+  ResumesGetResumeEndpointResponse,
+  ResumesDeleteResumeEndpointData,
+  ResumesDeleteResumeEndpointResponse,
+  ScreensListScreensEndpointResponse,
+  ScreensCreateScreenEndpointData,
+  ScreensCreateScreenEndpointResponse,
+  ScreensGetScreenEndpointData,
+  ScreensGetScreenEndpointResponse,
   UsersReadUsersData,
   UsersReadUsersResponse,
   UsersCreateUserData,
@@ -45,6 +77,137 @@ import type {
   UtilsTestEmailResponse,
   UtilsHealthCheckResponse,
 } from "./types.gen"
+
+export class ApplicationsService {
+  /**
+   * List Applications Endpoint
+   * List job applications visible to the current user.
+   * @returns JobApplicationRead Successful Response
+   * @throws ApiError
+   */
+  public static listApplicationsEndpoint(): CancelablePromise<ApplicationsListApplicationsEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/applications",
+    })
+  }
+
+  /**
+   * Submit Application Endpoint
+   * Submit a job application on behalf of the current user.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns JobApplicationRead Successful Response
+   * @throws ApiError
+   */
+  public static submitApplicationEndpoint(
+    data: ApplicationsSubmitApplicationEndpointData,
+  ): CancelablePromise<ApplicationsSubmitApplicationEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/applications",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Application Endpoint
+   * Retrieve a single job application if authorized.
+   * @param data The data for the request.
+   * @param data.applicationId
+   * @returns JobApplicationRead Successful Response
+   * @throws ApiError
+   */
+  public static getApplicationEndpoint(
+    data: ApplicationsGetApplicationEndpointData,
+  ): CancelablePromise<ApplicationsGetApplicationEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/applications/{application_id}",
+      path: {
+        application_id: data.applicationId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class FilesService {
+  /**
+   * Upload File And Create
+   * Handles file upload, delegates storage, and records metadata in the database.
+   * @param data The data for the request.
+   * @param data.formData
+   * @returns File Successful Response
+   * @throws ApiError
+   */
+  public static uploadFileAndCreate(
+    data: FilesUploadFileAndCreateData,
+  ): CancelablePromise<FilesUploadFileAndCreateResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/files",
+      formData: data.formData,
+      mediaType: "multipart/form-data",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Download File Endpoint
+   * Retrieves a file by its database ID, performs authorization, and streams the content.
+   * @param data The data for the request.
+   * @param data.fileId
+   * @returns unknown Successful Response
+   * @throws ApiError
+   */
+  public static downloadFileEndpoint(
+    data: FilesDownloadFileEndpointData,
+  ): CancelablePromise<FilesDownloadFileEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/files/{file_id}",
+      path: {
+        file_id: data.fileId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Delete File Endpoint
+   * Deletes file metadata from the database and removes the file from storage.
+   * Only the owner or a superuser is authorized.
+   * @param data The data for the request.
+   * @param data.fileId
+   * @returns void Successful Response
+   * @throws ApiError
+   */
+  public static deleteFileEndpoint(
+    data: FilesDeleteFileEndpointData,
+  ): CancelablePromise<FilesDeleteFileEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: "/api/v1/files/{file_id}",
+      path: {
+        file_id: data.fileId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
 
 export class ItemsService {
   /**
@@ -167,6 +330,87 @@ export class ItemsService {
   }
 }
 
+export class JobsService {
+  /**
+   * List Job Listings
+   * Retrieve all job listings, newest first.
+   * @returns JobListingRead Successful Response
+   * @throws ApiError
+   */
+  public static listJobListings(): CancelablePromise<JobsListJobListingsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/jobs/listings",
+    })
+  }
+
+  /**
+   * Create Job Listing
+   * Persist a structured job listing record.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns JobListingRead Successful Response
+   * @throws ApiError
+   */
+  public static createJobListing(
+    data: JobsCreateJobListingData,
+  ): CancelablePromise<JobsCreateJobListingResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/jobs/listings",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Parse Job Listing
+   * Parse raw job listing text into structured data using the LLM agent.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns JobListingParseResponse Successful Response
+   * @throws ApiError
+   */
+  public static parseJobListing(
+    data: JobsParseJobListingData,
+  ): CancelablePromise<JobsParseJobListingResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/jobs/listings/parse",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Parse Job Listing File
+   * Parse an uploaded document into a structured job listing via the LLM agent.
+   * @param data The data for the request.
+   * @param data.formData
+   * @returns JobListingParseResponse Successful Response
+   * @throws ApiError
+   */
+  public static parseJobListingFile(
+    data: JobsParseJobListingFileData,
+  ): CancelablePromise<JobsParseJobListingFileResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/jobs/listings/parse-file",
+      formData: data.formData,
+      mediaType: "multipart/form-data",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
 export class LoginService {
   /**
    * Login Access Token
@@ -264,6 +508,173 @@ export class LoginService {
       url: "/api/v1/password-recovery-html-content/{email}",
       path: {
         email: data.email,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class PrivateService {
+  /**
+   * Create User
+   * Create a new user.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns UserPublic Successful Response
+   * @throws ApiError
+   */
+  public static createUser(
+    data: PrivateCreateUserData,
+  ): CancelablePromise<PrivateCreateUserResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/private/users/",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class ResumesService {
+  /**
+   * List Resumes Endpoint
+   * Return resumes accessible to the current user.
+   * @returns ResumeRead Successful Response
+   * @throws ApiError
+   */
+  public static listResumesEndpoint(): CancelablePromise<ResumesListResumesEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/resumes",
+    })
+  }
+
+  /**
+   * Upload Resume Endpoint
+   * Upload a resume, persist the file, and store parsed text content.
+   * @param data The data for the request.
+   * @param data.formData
+   * @returns ResumeRead Successful Response
+   * @throws ApiError
+   */
+  public static uploadResumeEndpoint(
+    data: ResumesUploadResumeEndpointData,
+  ): CancelablePromise<ResumesUploadResumeEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/resumes",
+      formData: data.formData,
+      mediaType: "multipart/form-data",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Resume Endpoint
+   * Return a single resume if the requester is authorized.
+   * @param data The data for the request.
+   * @param data.resumeId
+   * @returns ResumeRead Successful Response
+   * @throws ApiError
+   */
+  public static getResumeEndpoint(
+    data: ResumesGetResumeEndpointData,
+  ): CancelablePromise<ResumesGetResumeEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/resumes/{resume_id}",
+      path: {
+        resume_id: data.resumeId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Delete Resume Endpoint
+   * Delete a resume and its backing file if authorized.
+   * @param data The data for the request.
+   * @param data.resumeId
+   * @returns void Successful Response
+   * @throws ApiError
+   */
+  public static deleteResumeEndpoint(
+    data: ResumesDeleteResumeEndpointData,
+  ): CancelablePromise<ResumesDeleteResumeEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: "/api/v1/resumes/{resume_id}",
+      path: {
+        resume_id: data.resumeId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class ScreensService {
+  /**
+   * List Screens Endpoint
+   * Return screening results visible to the current user.
+   * @returns JobApplicationScreenRead Successful Response
+   * @throws ApiError
+   */
+  public static listScreensEndpoint(): CancelablePromise<ScreensListScreensEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/screens",
+    })
+  }
+
+  /**
+   * Create Screen Endpoint
+   * Screen a job application against its listing.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns JobApplicationScreenRead Successful Response
+   * @throws ApiError
+   */
+  public static createScreenEndpoint(
+    data: ScreensCreateScreenEndpointData,
+  ): CancelablePromise<ScreensCreateScreenEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/screens",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Screen Endpoint
+   * Retrieve a screening result if the requester is authorized.
+   * @param data The data for the request.
+   * @param data.screenId
+   * @returns JobApplicationScreenRead Successful Response
+   * @throws ApiError
+   */
+  public static getScreenEndpoint(
+    data: ScreensGetScreenEndpointData,
+  ): CancelablePromise<ScreensGetScreenEndpointResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/screens/{screen_id}",
+      path: {
+        screen_id: data.screenId,
       },
       errors: {
         422: "Validation Error",

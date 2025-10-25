@@ -1,14 +1,46 @@
+import errno
 import os
 import shutil
+from pathlib import Path
 from typing import BinaryIO
+
 from app.core.config import settings
 from app.services.storage.base import StorageService
 
-# Configuration
-STORAGE_ROOT = settings.STORAGE_ROOT
-if not STORAGE_ROOT:
-    raise RuntimeError("STORAGE_ROOT environment variable is not set.")
-os.makedirs(STORAGE_ROOT, exist_ok=True)
+BACKEND_ROOT = Path(__file__).resolve().parents[3]
+FALLBACK_STORAGE_ROOT = BACKEND_ROOT / "local_storage"
+
+
+def _normalize_root(raw_root: str | None) -> Path:
+    """Return an absolute Path for the configured storage root."""
+    if raw_root:
+        root_path = Path(raw_root)
+        if not root_path.is_absolute():
+            return BACKEND_ROOT / root_path
+        return root_path
+    return FALLBACK_STORAGE_ROOT
+
+
+def _ensure_directory(path: Path) -> Path:
+    """Create the storage directory, falling back when the path is read-only."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+    except OSError as exc:
+        if exc.errno in (errno.EROFS, errno.EACCES):
+            fallback = FALLBACK_STORAGE_ROOT
+            fallback.mkdir(parents=True, exist_ok=True)
+            print(
+                f"Configured storage root '{path}' is not writable; "
+                f"falling back to '{fallback}'."
+            )
+            return fallback
+        raise
+
+
+_configured_root = _normalize_root(settings.STORAGE_ROOT)
+_effective_root = _ensure_directory(_configured_root)
+STORAGE_ROOT = str(_effective_root)
 
 class LocalStorageService(StorageService):
     """
