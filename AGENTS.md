@@ -8,3 +8,6 @@ alembic revision --autogenerate -m "some message"
 
 apply migration with
 alembic upgrade head
+
+to install a package, in backend folder run
+uv install <package>

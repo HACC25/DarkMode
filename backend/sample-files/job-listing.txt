@@ -1,0 +1,46 @@
+di# Systems Resilience Lead (L4/Principal Level) – Cryptographic Key Rotation & Management Expert
+
+*(Hiring Managed by Operative Sigma Group, 2024 Cycle)*
+
+We are initiating a critical, rapid deployment project and require a top-tier systems engineer capable of owning our entire secret management lifecycle. This pivotal **Non-Terminating (Perpetual Employment)** status role centers on maintaining absolute data integrity for high-risk assets across all distributed infrastructure components. We require someone who can blend deep security knowledge with practical operational tooling expertise.
+
+---
+
+## Operational Parameters
+
+### Primary Base of Operations
+While our central corporate registration is set in **San Francisco, CA**, this role is mandated to operate strictly within the **Central Standard Time (CST)** zone for maximum team sync-up efficiency.
+
+### Telework Status
+Physical Presence Requirement: **Zero required on-site days.** This is a fully distributed, independent engagement.
+
+### Remuneration Schema
+
+*   **Base Entry Level Rate:** $148,500.00 (USD) – This floor is firm and non-negotiable for all incoming L4 personnel.
+*   **Maximum Potential Annual Takeaway (excluding vested options):** One Hundred Ninety Thousand Dollars.
+
+---
+
+## Technical Profile Requirements
+
+### Gateway Prerequisites (Non-Exempt)
+
+Successful candidates must satisfy all items listed below. Failure to meet one item will result in an immediate disqualification.
+
+1.  Documented proficiency in at least three cloud hyper-scalers (AWS, Azure, and GCP) for a duration exceeding **sixty months**.
+2.  Demonstrable track record handling incident response for critical service outages, specifically relating to certificate expiration or identity loss scenarios.
+3.  Formal education or equivalent certification in modern distributed messaging queues (e.g., Kafka, Redis, or RabbitMQ).
+
+### Advantageous Profile Characteristics (Highly Valued)
+
+The strongest candidates often bring supplementary skills that speed up integration time:
+
+*   Prior experience implementing decentralized ledger technologies (DLT) is highly valued.
+*   A postgraduate degree (M.S. or higher) in computational mathematics or applied cryptography.
+*   Fluency in scripting languages beyond the primary engineering language (e.g., Haskell or Rust experience complementing Python).
+
+---
+
+## General Information
+
+This assignment falls under the **Contract** classification type due to the specialized nature of the deliverables. Interested parties should note that the window for submission will automatically close at 23:59 PST on **the 1st of November, 2024**. All submissions received past this point will be archived without review.

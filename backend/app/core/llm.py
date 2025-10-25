@@ -1,7 +1,16 @@
-from dotenv import load_dotenv
+from app.core.config import settings
+
 from pydantic_ai import Agent
-import os
+from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
-load_dotenv()
+model = OpenAIChatModel(settings.OPENAI_LLM, provider=OpenAIProvider(api_key=settings.OPENAI_API_KEY))
+agent = Agent(model)
 
-agent = Agent(os.getenv("LLM"), instructions="You are a helpful assistant.")
+
+JOB_PROMPT = """"""
+SCREEN_PROMPT =""""""
+
+
+def get_job_agent():
+    pass

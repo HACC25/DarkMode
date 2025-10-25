@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import Column, Date, DateTime, JSON, Numeric
 from sqlmodel import Field, SQLModel
+from app.core.utils import MakeOptional
 
 
 def _utcnow() -> datetime:
@@ -83,8 +84,9 @@ class JobListingParseRequest(SQLModel):
 
     text: str
 
+class JobListingParseResponse(JobListingBase, MakeOptional):
+    pass
 
 class JobListingSchema(JobListingBase):
     """Structured schema produced by the LLM parser."""
-
     pass

@@ -1,25 +1,53 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, File as FastAPIFile, HTTPException, UploadFile, status
 
 from app.services.jobs.application import JobListingServiceDep
 from app.services.jobs.models import (
     JobListingCreate,
     JobListingParseRequest,
     JobListingRead,
-    JobListingSchema,
+    JobListingParseResponse,
 )
+from app.services.parsers import ParserServiceDep
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
-@router.post("/listings/parse", response_model=JobListingSchema)
+@router.get("/listings", response_model=list[JobListingRead])
+async def list_job_listings(service: JobListingServiceDep) -> list[JobListingRead]:
+    """
+    Retrieve all job listings, newest first.
+    """
+    return service.list_job_listings()
+
+
+@router.post("/listings/parse", response_model=JobListingParseResponse)
 async def parse_job_listing(
     payload: JobListingParseRequest, service: JobListingServiceDep
-) -> JobListingSchema:
+) -> JobListingParseResponse:
     """
     Parse raw job listing text into structured data using the LLM agent.
     """
     try:
-        return service.parse_job_listing_text(payload.text)
+        return await service.parse_job_listing_text(payload.text)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/listings/parse-file", response_model=JobListingParseResponse)
+async def parse_job_listing_file(
+    parser_service: ParserServiceDep,
+    service: JobListingServiceDep,
+    file: UploadFile = FastAPIFile(...),
+) -> JobListingParseResponse:
+    """
+    Parse an uploaded document into a structured job listing via the LLM agent.
+    """
+    parsed = parser_service.parse_file(file=file)
+    if not parsed.text.strip():
+        raise HTTPException(status_code=422, detail="Uploaded job description was empty.")
+
+    try:
+        return await service.parse_job_listing_text(parsed.text)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
