@@ -11,7 +11,7 @@ from sqlmodel import Session
 from app.core import security
 from app.core.config import settings
 from app.core.db import engine
-from app.models import TokenPayload, User
+from app.models import TokenPayload, User, UserRoleEnum
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
@@ -55,3 +55,14 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def require_company_role(current_user: CurrentUser) -> User:
+    if current_user.role != UserRoleEnum.COMPANY:
+        raise HTTPException(
+            status_code=403, detail="The user must have the COMPANY role"
+        )
+    return current_user
+
+
+CompanyUser = Annotated[User, Depends(require_company_role)]

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File as FastAPIFile, HTTPException, UploadFile, status
 
+from app.api.deps import CompanyUser
 from app.services.jobs.application import JobListingServiceDep
 from app.services.jobs.models import (
     JobListingCreate,
@@ -13,7 +14,9 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
 @router.get("/listings", response_model=list[JobListingRead])
-async def list_job_listings(service: JobListingServiceDep) -> list[JobListingRead]:
+async def list_job_listings(
+    service: JobListingServiceDep, _: CompanyUser
+) -> list[JobListingRead]:
     """
     Retrieve all job listings, newest first.
     """
@@ -22,7 +25,9 @@ async def list_job_listings(service: JobListingServiceDep) -> list[JobListingRea
 
 @router.post("/listings/parse", response_model=JobListingParseResponse)
 async def parse_job_listing(
-    payload: JobListingParseRequest, service: JobListingServiceDep
+    payload: JobListingParseRequest,
+    service: JobListingServiceDep,
+    _: CompanyUser,
 ) -> JobListingParseResponse:
     """
     Parse raw job listing text into structured data using the LLM agent.
@@ -37,6 +42,7 @@ async def parse_job_listing(
 async def parse_job_listing_file(
     parser_service: ParserServiceDep,
     service: JobListingServiceDep,
+    _: CompanyUser,
     file: UploadFile = FastAPIFile(...),
 ) -> JobListingParseResponse:
     """
@@ -58,9 +64,13 @@ async def parse_job_listing_file(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_job_listing(
-    listing_in: JobListingCreate, service: JobListingServiceDep
+    listing_in: JobListingCreate,
+    service: JobListingServiceDep,
+    company_user: CompanyUser,
 ) -> JobListingRead:
     """
     Persist a structured job listing record.
     """
-    return service.create_job_listing(listing_in=listing_in)
+    return service.create_job_listing(
+        listing_in=listing_in, company_id=company_user.id
+    )

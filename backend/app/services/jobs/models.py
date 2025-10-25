@@ -60,6 +60,11 @@ class JobListing(JobListingBase, table=True):
     __tablename__ = "job_listing"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    company_id: UUID = Field(
+        foreign_key="user.id",
+        nullable=False,
+        index=True,
+    )
     posted_on: datetime = Field(
         default_factory=_utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),
@@ -76,6 +81,7 @@ class JobListingRead(JobListingBase):
     """Public representation of a job listing."""
 
     id: UUID
+    company_id: UUID
     posted_on: datetime
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+import uuid
 
 from fastapi import Depends, HTTPException
 from sqlmodel import Session, select
@@ -33,11 +34,15 @@ class JobListingApplicationService:
 
         return result.output
 
-    def create_job_listing(self, *, listing_in: JobListingCreate) -> JobListing:
+    def create_job_listing(
+        self, *, listing_in: JobListingCreate, company_id: uuid.UUID
+    ) -> JobListing:
         """
         Persist a structured job listing record.
         """
-        db_listing = JobListing.model_validate(listing_in)
+        db_listing = JobListing.model_validate(
+            listing_in, update={"company_id": company_id}
+        )
 
         try:
             self._session.add(db_listing)
