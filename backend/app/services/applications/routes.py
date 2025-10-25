@@ -1,0 +1,45 @@
+from uuid import UUID
+
+from fastapi import APIRouter, status
+
+from app.api.deps import CurrentUser
+from app.services.applications.application import JobApplicationServiceDep
+from app.services.applications.models import (
+    JobApplicationCreate,
+    JobApplicationRead,
+)
+
+router = APIRouter(prefix="/applications", tags=["applications"])
+
+
+@router.get("", response_model=list[JobApplicationRead])
+async def list_applications_endpoint(
+    current_user: CurrentUser,
+    service: JobApplicationServiceDep,
+) -> list[JobApplicationRead]:
+    """List job applications visible to the current user."""
+    return service.list_applications(requester=current_user)
+
+
+@router.get("/{application_id}", response_model=JobApplicationRead)
+async def get_application_endpoint(
+    application_id: UUID,
+    current_user: CurrentUser,
+    service: JobApplicationServiceDep,
+) -> JobApplicationRead:
+    """Retrieve a single job application if authorized."""
+    return service.get_application(
+        application_id=application_id,
+        requester=current_user,
+    )
+
+
+@router.post("", response_model=JobApplicationRead, status_code=status.HTTP_201_CREATED)
+async def submit_application_endpoint(
+    payload: JobApplicationCreate,
+    current_user: CurrentUser,
+    service: JobApplicationServiceDep,
+) -> JobApplicationRead:
+    """Submit a job application on behalf of the current user."""
+    return service.submit_application(applicant=current_user, application_in=payload)
+
