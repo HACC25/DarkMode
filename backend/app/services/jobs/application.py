@@ -4,18 +4,20 @@ from typing import Annotated
 import uuid
 
 from fastapi import Depends, HTTPException
+from pydantic_ai import Agent
 from sqlmodel import Session, select
 
 from app.api.deps import SessionDep
-from app.core.llm import agent
+from app.core.llm import JobAgentDep
 from app.services.jobs.models import JobListing, JobListingCreate, JobListingParseResponse
 
 
 class JobListingApplicationService:
     """Application service handling job listing workflows."""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, job_agent: Agent) -> None:
         self._session = session
+        self._job_agent = job_agent
 
     async def parse_job_listing_text(self, raw_text: str) -> JobListingParseResponse:
         """
@@ -25,7 +27,9 @@ class JobListingApplicationService:
             raise ValueError("Input text must not be empty.")
 
         try:
-            result = await agent.run(raw_text, output_type=JobListingParseResponse)
+            result = await self._job_agent.run(
+                raw_text, output_type=JobListingParseResponse
+            )
         except Exception as exc:
             raise ValueError("Unable to parse job listing text.") from exc
 
@@ -63,8 +67,11 @@ class JobListingApplicationService:
         return list(self._session.exec(statement))
 
 
-def get_job_listing_service(session: SessionDep) -> JobListingApplicationService:
-    return JobListingApplicationService(session=session)
+def get_job_listing_service(
+    session: SessionDep,
+    job_agent: JobAgentDep,
+) -> JobListingApplicationService:
+    return JobListingApplicationService(session=session, job_agent=job_agent)
 
 
 JobListingServiceDep = Annotated[JobListingApplicationService, Depends(get_job_listing_service)]

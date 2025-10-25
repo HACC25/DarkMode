@@ -32,6 +32,7 @@ from app.services.files import models as file_models # noqa
 from app.services.applications import models as application_models # noqa
 from app.services.jobs import models as job_models # noqa
 from app.services.resumes import models as resume_models # noqa
+from app.services.screens import models as screen_models # noqa
 
 def get_url():
     return str(settings.SQLALCHEMY_DATABASE_URI)

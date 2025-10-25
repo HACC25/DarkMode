@@ -1,0 +1,229 @@
+from __future__ import annotations
+
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import Depends, HTTPException, status
+from pydantic_ai import Agent
+from sqlmodel import Session, select
+
+from app.api.deps import SessionDep
+from app.core.llm import ScreenAgentDep
+from app.models import User, UserRoleEnum
+from app.services.applications.models import JobApplication
+from app.services.jobs.models import JobListing
+from app.services.resumes.models import Resume
+from app.services.screens.models import (
+    JobApplicationScreen,
+    JobApplicationScreenCreate,
+    JobApplicationScreenAgentPayload,
+)
+
+
+class JobApplicationScreeningService:
+    """Service responsible for screening applications against job listings."""
+
+    def __init__(self, session: Session, screen_agent: Agent) -> None:
+        self._session = session
+        self._screen_agent = screen_agent
+
+    async def screen_application(
+        self,
+        *,
+        requester: User,
+        payload: JobApplicationScreenCreate,
+    ) -> JobApplicationScreen:
+        """
+        Generate screening results for a job application.
+        """
+        application = self._session.get(JobApplication, payload.application_id)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job application not found.",
+            )
+
+        job_listing = self._session.get(JobListing, application.job_listing_id)
+        if not job_listing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job listing not found for this application.",
+            )
+
+        if not requester.is_superuser:
+            owns_application = application.applicant_id == requester.id
+            owns_listing = job_listing.company_id == requester.id
+            if not owns_application and not owns_listing:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not authorized to screen this application.",
+                )
+
+        if application.resume_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot screen an application without an attached resume.",
+            )
+
+        resume = self._session.get(Resume, application.resume_id)
+        if not resume:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Resume not found for this application.",
+            )
+
+        if (
+            not requester.is_superuser
+            and requester.role == UserRoleEnum.APPLICANT
+            and resume.user_id != requester.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot screen an application using another user's resume.",
+            )
+
+        existing_screen = self._session.exec(
+            select(JobApplicationScreen).where(
+                JobApplicationScreen.application_id == application.id
+            )
+        ).first()
+        if existing_screen:
+            return existing_screen
+
+        agent_input = {
+            "job_listing": {
+                "title": job_listing.title,
+                "description": job_listing.description,
+                "minimum_qualifications": job_listing.minimum_qualifications,
+                "preferred_qualifications": job_listing.preferred_qualifications,
+            },
+            "resume": {
+                "text_content": resume.text_content or "",
+            },
+        }
+
+        try:
+            agent_result = await self._screen_agent.run(
+                agent_input,
+                output_type=JobApplicationScreenAgentPayload,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Screening agent failed: {exc}",
+            ) from exc
+
+        if not isinstance(agent_result.output, JobApplicationScreenAgentPayload):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Screening agent returned an unexpected payload.",
+            )
+
+        structured_screen = agent_result.output
+
+        screening = JobApplicationScreen(
+            application_id=application.id,
+            minimum_qualifications=structured_screen.minimum_qualifications,
+            preferred_qualifications=structured_screen.preferred_qualifications,
+        )
+
+        try:
+            self._session.add(screening)
+            self._session.commit()
+            self._session.refresh(screening)
+            return screening
+        except Exception as exc:  # pragma: no cover - re-raised as HTTP error
+            self._session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to store screening results: {exc}",
+            ) from exc
+
+    def list_screens(self, *, requester: User) -> list[JobApplicationScreen]:
+        """
+        Return screening results visible to the requester.
+        """
+        query = select(JobApplicationScreen).order_by(
+            JobApplicationScreen.created_at.desc()
+        )
+
+        if requester.is_superuser:
+            return list(self._session.exec(query))
+
+        if requester.role == UserRoleEnum.COMPANY:
+            company_query = (
+                select(JobApplicationScreen)
+                .join(
+                    JobApplication,
+                    JobApplication.id == JobApplicationScreen.application_id,
+                )
+                .join(
+                    JobListing,
+                    JobListing.id == JobApplication.job_listing_id,
+                )
+                .where(JobListing.company_id == requester.id)
+                .order_by(JobApplicationScreen.created_at.desc())
+            )
+            return list(self._session.exec(company_query))
+
+        applicant_query = (
+            select(JobApplicationScreen)
+            .join(
+                JobApplication,
+                JobApplication.id == JobApplicationScreen.application_id,
+            )
+            .where(JobApplication.applicant_id == requester.id)
+            .order_by(JobApplicationScreen.created_at.desc())
+        )
+        return list(self._session.exec(applicant_query))
+
+    def get_screen(
+        self,
+        *,
+        screen_id: UUID,
+        requester: User,
+    ) -> JobApplicationScreen:
+        """
+        Retrieve a single screening result if the requester is authorized.
+        """
+        screen = self._session.get(JobApplicationScreen, screen_id)
+        if not screen:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Screening result not found.",
+            )
+
+        application = self._session.get(JobApplication, screen.application_id)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Associated application is missing.",
+            )
+
+        job_listing = self._session.get(JobListing, application.job_listing_id)
+
+        if requester.is_superuser:
+            return screen
+
+        if application.applicant_id == requester.id:
+            return screen
+
+        if job_listing and job_listing.company_id == requester.id:
+            return screen
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this screening result.",
+        )
+
+def get_job_application_screening_service(
+    session: SessionDep,
+    screen_agent: ScreenAgentDep,
+) -> JobApplicationScreeningService:
+    return JobApplicationScreeningService(session=session, screen_agent=screen_agent)
+
+
+JobApplicationScreeningServiceDep = Annotated[
+    JobApplicationScreeningService,
+    Depends(get_job_application_screening_service),
+]

@@ -6,6 +6,7 @@ from app.services.applications import routes as applications
 from app.services.files import routes as files
 from app.services.jobs import routes as jobs
 from app.services.resumes import routes as resumes
+from app.services.screens import routes as screens
 
 api_router = APIRouter()
 api_router.include_router(login.router)
@@ -16,5 +17,6 @@ api_router.include_router(applications.router)
 api_router.include_router(files.router)
 api_router.include_router(jobs.router)
 api_router.include_router(resumes.router)
+api_router.include_router(screens.router)
 if settings.ENVIRONMENT == "local":
     api_router.include_router(private.router)
