@@ -17,9 +17,9 @@ function Navbar() {
     navLinks.push({ label: "Resumes", to: "/resumes" })
   }
 
-  if (user?.role === "COMPANY") {
-    navLinks.push({ label: "Screens", to: "/screens" })
-  }
+  // if (user?.role === "COMPANY") {
+  //   navLinks.push({ label: "Screens", to: "/screens" })
+  // }
 
   return (
     <Box borderBottomWidth="1px">
