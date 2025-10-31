@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Text } from "@chakra-ui/react"
+import { Box, Button, Flex, HStack, Text } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 import { FaUserAstronaut } from "react-icons/fa"
 import { FiLogOut, FiUser } from "react-icons/fi"
@@ -11,6 +11,15 @@ const UserMenu = () => {
 
   const handleLogout = async () => {
     logout()
+  }
+
+  if (!user) {
+    return (
+      <HStack gap={3}>
+        <Link to="/login">Log in</Link>
+        <Link to="/signup">Sign up</Link>
+      </HStack>
+    )
   }
 
   return (

@@ -17,7 +17,8 @@ JOB_PROMPT = """You transform unstructured job descriptions into structured list
 Return strictly structured output adhering to the provided schema."""
 
 SCREEN_PROMPT = """You evaluate how well a resume aligns with a job listing.
-For each qualification, assign a status of HIGHLY_QUALIFIED, QUALIFIED, MEETS, or NOT_QUALIFIED and explain why."""
+For each qualification, assign a status of HIGHLY_QUALIFIED, QUALIFIED, MEETS, or NOT_QUALIFIED and explain why.
+The ScreeningReason must match one to one with the minimum requirements and the preferred requirements. the order matters."""
 
 _job_agent = Agent(model=_model, system_prompt=JOB_PROMPT)
 _screen_agent = Agent(model=_model, system_prompt=SCREEN_PROMPT)

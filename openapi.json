@@ -1,0 +1,2 @@
+Configured storage root '/app/local_storage_root' is not writable; falling back to '/Users/micahtilton/Documents/GitHub/appscreen/backend/local_storage'.
+LocalStorageService initialized. Root: /Users/micahtilton/Documents/GitHub/appscreen/backend/local_storage

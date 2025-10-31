@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File as FastAPIFile, HTTPException, UploadFile, status
 
-from app.api.deps import CompanyUser
+from app.api.deps import CompanyUser, CurrentUser
 from app.services.jobs.application import JobListingServiceDep
 from app.services.jobs.models import (
     JobListingCreate,
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 @router.get("/listings", response_model=list[JobListingRead])
 async def list_job_listings(
-    service: JobListingServiceDep, _: CompanyUser
+    service: JobListingServiceDep, _: CurrentUser
 ) -> list[JobListingRead]:
     """
     Retrieve all job listings, newest first.

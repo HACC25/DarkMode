@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 from app.api.deps import SessionDep
 from app.core.llm import ScreenAgentDep
 from app.models import User, UserRoleEnum
-from app.services.applications.models import JobApplication
+from app.services.applications.models import JobApplication, JobApplicationStatusEnum
 from app.services.jobs.models import JobListing
 from app.services.resumes.models import Resume
 from app.services.screens.models import (
@@ -102,11 +102,14 @@ class JobApplicationScreeningService:
             },
         }
 
+        print(agent_input)
+
         try:
             agent_result = await self._screen_agent.run(
-                agent_input,
+                user_prompt=str(agent_input),
                 output_type=JobApplicationScreenAgentPayload,
             )
+            print(agent_result)
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -129,6 +132,8 @@ class JobApplicationScreeningService:
 
         try:
             self._session.add(screening)
+            application.status = JobApplicationStatusEnum.UNDER_REVIEW
+            self._session.add(application)
             self._session.commit()
             self._session.refresh(screening)
             return screening

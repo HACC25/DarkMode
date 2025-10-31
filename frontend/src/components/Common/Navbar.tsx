@@ -1,31 +1,46 @@
-import { Flex, Image, useBreakpointValue } from "@chakra-ui/react"
+import { Box, Flex, HStack, Text } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 
-import Logo from "/assets/images/fastapi-logo.svg"
+import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import UserMenu from "./UserMenu"
 
 function Navbar() {
-  const display = useBreakpointValue({ base: "none", md: "flex" })
+  const { user } = useAuth()
+  const authenticated = isLoggedIn()
+  const navLinks = [
+    { label: "Dashboard", to: "/" },
+    { label: "Jobs", to: "/jobs" },
+    { label: "Applications", to: "/applications" },
+  ]
+
+  if (user?.role === "APPLICANT") {
+    navLinks.push({ label: "Resumes", to: "/resumes" })
+  }
+
+  if (user?.role === "COMPANY") {
+    navLinks.push({ label: "Screens", to: "/screens" })
+  }
 
   return (
-    <Flex
-      display={display}
-      justify="space-between"
-      position="sticky"
-      color="white"
-      align="center"
-      bg="bg.muted"
-      w="100%"
-      top={0}
-      p={4}
-    >
-      <Link to="/">
-        <Image src={Logo} alt="Logo" w="180px" maxW="2xs" px={2} />
-      </Link>
-      <Flex gap={2} alignItems="center">
+    <Box borderBottomWidth="1px">
+      <Flex align="center" justify="space-between" px={4} py={3}>
+        <HStack gap={4}>
+          <Link to="/">
+            <Text fontWeight="bold">AppScreen</Text>
+          </Link>
+          {authenticated && (
+            <HStack gap={3}>
+              {navLinks.map((link) => (
+                <Link key={link.to} to={link.to}>
+                  {link.label}
+                </Link>
+              ))}
+            </HStack>
+          )}
+        </HStack>
         <UserMenu />
       </Flex>
-    </Flex>
+    </Box>
   )
 }
 

@@ -82,6 +82,8 @@ export type JobApplicationRead = {
   status: JobApplicationStatusEnum
   created_at: string
   updated_at: string
+  applicant: UserPublic
+  resume: ResumeRead | null
 }
 
 /**

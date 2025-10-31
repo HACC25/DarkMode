@@ -3,6 +3,7 @@ import {
   useQuery,
   useQueryClient,
   type UseMutationOptions,
+  type UseQueryOptions,
   type UseQueryResult,
 } from "@tanstack/react-query"
 
@@ -19,10 +20,13 @@ export const resumesKeys = {
   detail: (id: string) => [...resumesKeys.all, "detail", id] as const,
 }
 
-export function useResumesQuery(): UseQueryResult<ResumeRead[]> {
+export function useResumesQuery(
+  options: Pick<UseQueryOptions<ResumeRead[], Error>, "enabled"> = {},
+): UseQueryResult<ResumeRead[]> {
   return useQuery({
     queryKey: resumesKeys.list(),
     queryFn: () => ResumesService.listResumesEndpoint(),
+    ...options,
   })
 }
 

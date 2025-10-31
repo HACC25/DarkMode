@@ -5,8 +5,11 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import Field as PydanticField
-from sqlalchemy import Column, DateTime, Enum as SQLAlchemyEnum, JSON, UniqueConstraint
+from sqlalchemy import Column, DateTime, JSON, UniqueConstraint
+from sqlalchemy.types import TypeDecorator
 from sqlmodel import Field, SQLModel
+
+from app.models import UserPublic
 
 
 def _utcnow() -> datetime:
@@ -30,6 +33,29 @@ class ScreeningReason(SQLModel):
     reason: str = PydanticField(max_length=1000)
 
 
+class ScreeningReasonListType(TypeDecorator):
+    """Persist ScreeningReason collections as JSON."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return []
+        return [
+            reason.model_dump() if isinstance(reason, ScreeningReason) else reason
+            for reason in value
+        ]
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []
+        return [
+            reason if isinstance(reason, ScreeningReason) else ScreeningReason(**reason)
+            for reason in value
+        ]
+
+
 class JobApplicationScreenBase(SQLModel):
     """Shared fields for job application screens."""
 
@@ -39,11 +65,11 @@ class JobApplicationScreenBase(SQLModel):
     )
     minimum_qualifications: list[ScreeningReason] = Field(
         default_factory=list,
-        sa_column=Column(JSON, nullable=False),
+        sa_column=Column(ScreeningReasonListType(), nullable=False),
     )
     preferred_qualifications: list[ScreeningReason] = Field(
         default_factory=list,
-        sa_column=Column(JSON, nullable=False),
+        sa_column=Column(ScreeningReasonListType(), nullable=False),
     )
 
 
@@ -78,7 +104,6 @@ class JobApplicationScreenRead(JobApplicationScreenBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
-
 
 class JobApplicationScreenAgentPayload(SQLModel):
     """Structured payload returned by the screening LLM."""

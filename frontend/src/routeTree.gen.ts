@@ -18,8 +18,12 @@ import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
-import { Route as LayoutItemsImport } from './routes/_layout/items'
+import { Route as LayoutScreensImport } from './routes/_layout/screens'
+import { Route as LayoutResumesImport } from './routes/_layout/resumes'
+import { Route as LayoutJobsImport } from './routes/_layout/jobs'
+import { Route as LayoutApplicationsImport } from './routes/_layout/applications'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutJobJobIdImport } from './routes/_layout/job/$jobId'
 
 // Create/Update Routes
 
@@ -58,13 +62,33 @@ const LayoutSettingsRoute = LayoutSettingsImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutItemsRoute = LayoutItemsImport.update({
-  path: '/items',
+const LayoutScreensRoute = LayoutScreensImport.update({
+  path: '/screens',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutResumesRoute = LayoutResumesImport.update({
+  path: '/resumes',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutJobsRoute = LayoutJobsImport.update({
+  path: '/jobs',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutApplicationsRoute = LayoutApplicationsImport.update({
+  path: '/applications',
   getParentRoute: () => LayoutRoute,
 } as any)
 
 const LayoutAdminRoute = LayoutAdminImport.update({
   path: '/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutJobJobIdRoute = LayoutJobJobIdImport.update({
+  path: '/job/$jobId',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -96,8 +120,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminImport
       parentRoute: typeof LayoutImport
     }
-    '/_layout/items': {
-      preLoaderRoute: typeof LayoutItemsImport
+    '/_layout/applications': {
+      preLoaderRoute: typeof LayoutApplicationsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/jobs': {
+      preLoaderRoute: typeof LayoutJobsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/resumes': {
+      preLoaderRoute: typeof LayoutResumesImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/screens': {
+      preLoaderRoute: typeof LayoutScreensImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/settings': {
@@ -108,6 +144,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/job/$jobId': {
+      preLoaderRoute: typeof LayoutJobJobIdImport
+      parentRoute: typeof LayoutImport
+    }
   }
 }
 
@@ -116,9 +156,13 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
     LayoutAdminRoute,
-    LayoutItemsRoute,
+    LayoutApplicationsRoute,
+    LayoutJobsRoute,
+    LayoutResumesRoute,
+    LayoutScreensRoute,
     LayoutSettingsRoute,
     LayoutIndexRoute,
+    LayoutJobJobIdRoute,
   ]),
   LoginRoute,
   RecoverPasswordRoute,

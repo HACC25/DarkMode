@@ -19,12 +19,13 @@ export const screensKeys = {
   detail: (id: string) => [...screensKeys.all, "detail", id] as const,
 }
 
-export function useScreensQuery(): UseQueryResult<
-  JobApplicationScreenRead[]
-> {
+export function useScreensQuery(
+  options: { enabled?: boolean; onError?: (error: Error) => void } = {},
+): UseQueryResult<JobApplicationScreenRead[]> {
   return useQuery({
     queryKey: screensKeys.list(),
     queryFn: () => ScreensService.listScreensEndpoint(),
+    ...options,
   })
 }
 
