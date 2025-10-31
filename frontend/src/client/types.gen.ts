@@ -76,7 +76,7 @@ export type JobApplicationRead = {
   updated_at: string
   resume: Resume
   applicant: User
-  screen: JobApplicationScreen
+  screen: JobApplicationScreen | null
   job_listing: JobListing
 }
 

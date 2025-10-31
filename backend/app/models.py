@@ -324,7 +324,7 @@ class JobApplicationRead(JobApplicationBase):
     updated_at: datetime
     resume: "Resume"
     applicant: User
-    screen: "JobApplicationScreen"
+    screen: "JobApplicationScreen | None"
     job_listing: JobListing
 
 

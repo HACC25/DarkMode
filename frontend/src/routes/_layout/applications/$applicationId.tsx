@@ -217,7 +217,7 @@ function ApplicationDetailPage() {
           <Button as={Link} to="/applications" variant="outline">
             Back to applications
           </Button>
-          {user?.role === "COMPANY" && application.status === "SUBMITTED" && (
+          {user?.role === "COMPANY" && application.screen === null && (
             <Button onClick={handleScreen} loading={createScreen.isPending} colorPalette="gray">
               Run screen
             </Button>
