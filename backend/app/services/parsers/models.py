@@ -9,4 +9,3 @@ class ParsedDocument(BaseModel):
     filename: str
     content_type: str | None
     text: str
-

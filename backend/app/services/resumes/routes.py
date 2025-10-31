@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from fastapi import APIRouter, File as FastAPIFile, UploadFile, status
+from fastapi import APIRouter, UploadFile, status
+from fastapi import File as FastAPIFile
 
 from app.api.deps import CurrentUser
 from app.services.resumes.application import ResumeServiceDep

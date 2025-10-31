@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
-from typing import BinaryIO, Callable, TypeVar
+from collections.abc import Callable, Iterable
+from typing import BinaryIO, TypeVar
 
 __all__ = [
     "DocumentParser",
@@ -47,7 +47,9 @@ class ParserRegistry:
     ) -> Callable[[type[ParserType]], type[ParserType]]:
         normalized_extensions = [ext.lower().lstrip(".") for ext in extensions if ext]
         if not normalized_extensions:
-            raise ValueError("At least one extension must be provided for parser registration.")
+            raise ValueError(
+                "At least one extension must be provided for parser registration."
+            )
 
         def decorator(parser_cls: type[ParserType]) -> type[ParserType]:
             for extension in normalized_extensions:
@@ -55,7 +57,9 @@ class ParserRegistry:
 
             if mime_types:
                 for mime_type in mime_types:
-                    self._mime_to_extension[mime_type.lower()] = normalized_extensions[0]
+                    self._mime_to_extension[mime_type.lower()] = normalized_extensions[
+                        0
+                    ]
 
             return parser_cls
 
@@ -87,7 +91,9 @@ class ParserRegistry:
                 parser_cls = self._by_extension.get(mapped_extension)
 
         if parser_cls is None:
-            raise UnsupportedDocumentTypeError("Unsupported document type; no parser registered.")
+            raise UnsupportedDocumentTypeError(
+                "Unsupported document type; no parser registered."
+            )
         return parser_cls
 
 

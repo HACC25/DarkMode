@@ -1,12 +1,13 @@
-from fastapi import APIRouter, File as FastAPIFile, HTTPException, UploadFile, status
+from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import File as FastAPIFile
 
 from app.api.deps import CompanyUser, CurrentUser
 from app.services.jobs.application import JobListingServiceDep
 from app.services.jobs.models import (
     JobListingCreate,
     JobListingParseRequest,
-    JobListingRead,
     JobListingParseResponse,
+    JobListingRead,
 )
 from app.services.parsers import ParserServiceDep
 
@@ -50,7 +51,9 @@ async def parse_job_listing_file(
     """
     parsed = parser_service.parse_file(file=file)
     if not parsed.text.strip():
-        raise HTTPException(status_code=422, detail="Uploaded job description was empty.")
+        raise HTTPException(
+            status_code=422, detail="Uploaded job description was empty."
+        )
 
     try:
         return await service.parse_job_listing_text(parsed.text)
@@ -71,6 +74,4 @@ async def create_job_listing(
     """
     Persist a structured job listing record.
     """
-    return service.create_job_listing(
-        listing_in=listing_in, company_id=company_user.id
-    )
+    return service.create_job_listing(listing_in=listing_in, company_id=company_user.id)

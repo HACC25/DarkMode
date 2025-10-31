@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated
 import uuid
+from typing import Annotated
 
 from fastapi import Depends, HTTPException
 from pydantic_ai import Agent
@@ -9,7 +9,11 @@ from sqlmodel import Session, select
 
 from app.api.deps import SessionDep
 from app.core.llm import JobAgentDep
-from app.services.jobs.models import JobListing, JobListingCreate, JobListingParseResponse
+from app.services.jobs.models import (
+    JobListing,
+    JobListingCreate,
+    JobListingParseResponse,
+)
 
 
 class JobListingApplicationService:
@@ -74,4 +78,6 @@ def get_job_listing_service(
     return JobListingApplicationService(session=session, job_agent=job_agent)
 
 
-JobListingServiceDep = Annotated[JobListingApplicationService, Depends(get_job_listing_service)]
+JobListingServiceDep = Annotated[
+    JobListingApplicationService, Depends(get_job_listing_service)
+]

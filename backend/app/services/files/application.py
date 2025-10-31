@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 from fastapi import Depends, HTTPException, UploadFile
 from sqlmodel import Session
 
-from app.models import User
 from app.api.deps import SessionDep
+from app.models import User
 from app.services.files.models import File
 from app.services.storage.base import StorageService
 from app.services.storage.deps import StorageServiceDep
@@ -27,7 +27,9 @@ class FileApplicationService:
         storage_filename = str(file_id)
 
         try:
-            storage_key = self._storage.save(file_data=file.file, filename=storage_filename)
+            storage_key = self._storage.save(
+                file_data=file.file, filename=storage_filename
+            )
         except Exception as exc:  # pragma: no cover - propagated as HTTP error
             raise HTTPException(
                 status_code=500,
@@ -65,13 +67,17 @@ class FileApplicationService:
                 detail=f"Failed to record file metadata: {exc}",
             ) from exc
 
-    def retrieve_file_stream(self, *, file_id: UUID, requester: User) -> tuple[File, BinaryIO]:
+    def retrieve_file_stream(
+        self, *, file_id: UUID, requester: User
+    ) -> tuple[File, BinaryIO]:
         db_file = self._session.get(File, file_id)
         if not db_file:
             raise HTTPException(status_code=404, detail="File metadata not found")
 
         if db_file.owner_id != requester.id and not requester.is_superuser:
-            raise HTTPException(status_code=403, detail="Not authorized to access this file")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to access this file"
+            )
 
         try:
             file_stream = self._storage.retrieve(db_file.storage_key)
@@ -93,7 +99,9 @@ class FileApplicationService:
             raise HTTPException(status_code=404, detail="File metadata not found")
 
         if db_file.owner_id != requester.id and not requester.is_superuser:
-            raise HTTPException(status_code=403, detail="Not authorized to delete this file")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to delete this file"
+            )
 
         storage_key = db_file.storage_key
 
@@ -110,14 +118,18 @@ class FileApplicationService:
         try:
             self._storage.delete(storage_key)
         except FileNotFoundError:
-            print(f"Warning: File {storage_key} was not found in storage during cleanup.")  # noqa: T201
+            print(
+                f"Warning: File {storage_key} was not found in storage during cleanup."
+            )  # noqa: T201
         except Exception as exc:  # pragma: no cover - logged best effort
             print(  # noqa: T201 - log critical storage cleanup failure
                 f"CRITICAL: Failed to delete physical file {storage_key} from storage after DB commit: {exc}"
             )
 
 
-def get_file_service(session: SessionDep, storage: StorageServiceDep) -> FileApplicationService:
+def get_file_service(
+    session: SessionDep, storage: StorageServiceDep
+) -> FileApplicationService:
     return FileApplicationService(session=session, storage=storage)
 
 

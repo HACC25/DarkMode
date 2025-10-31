@@ -46,7 +46,9 @@ class PdfDocumentParser(DocumentParser):
 
 @parser_registry.register(
     extensions=["docx"],
-    mime_types=["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    mime_types=[
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ],
 )
 class DocxDocumentParser(DocumentParser):
     """Extracts plain text from DOCX documents."""
@@ -58,7 +60,9 @@ class DocxDocumentParser(DocumentParser):
         except Exception as exc:  # pragma: no cover - defensive guardrail
             raise DocumentParserError(f"Unable to open DOCX document: {exc}") from exc
 
-        lines: list[str] = [paragraph.text for paragraph in document.paragraphs if paragraph.text]
+        lines: list[str] = [
+            paragraph.text for paragraph in document.paragraphs if paragraph.text
+        ]
         return "\n".join(lines).strip()
 
 
@@ -76,7 +80,8 @@ class TextDocumentParser(DocumentParser):
             return file_obj.read()
 
         data = file_obj.read()
-        if not isinstance(data, (bytes, bytearray)):
-            raise DocumentParserError("The provided file object is not binary compatible.")
+        if not isinstance(data, bytes | bytearray):
+            raise DocumentParserError(
+                "The provided file object is not binary compatible."
+            )
         return bytes(data).decode("utf-8", errors="ignore")
-

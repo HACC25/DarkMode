@@ -90,9 +90,7 @@ class JobApplicationService:
         """
         Return job applications visible to the requester.
         """
-        base_query = select(JobApplication).order_by(
-            JobApplication.created_at.desc()
-        )
+        base_query = select(JobApplication).order_by(JobApplication.created_at.desc())
 
         if requester.is_superuser:
             return list(self._session.exec(base_query))
@@ -109,9 +107,7 @@ class JobApplicationService:
             )
             return list(self._session.exec(company_query))
 
-        applicant_query = base_query.where(
-            JobApplication.applicant_id == requester.id
-        )
+        applicant_query = base_query.where(JobApplication.applicant_id == requester.id)
         return list(self._session.exec(applicant_query))
 
     def get_application(
@@ -152,4 +148,3 @@ def get_job_application_service(
 JobApplicationServiceDep = Annotated[
     JobApplicationService, Depends(get_job_application_service)
 ]
-

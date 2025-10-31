@@ -15,8 +15,8 @@ from app.services.jobs.models import JobListing
 from app.services.resumes.models import Resume
 from app.services.screens.models import (
     JobApplicationScreen,
-    JobApplicationScreenCreate,
     JobApplicationScreenAgentPayload,
+    JobApplicationScreenCreate,
 )
 
 
@@ -220,6 +220,7 @@ class JobApplicationScreeningService:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this screening result.",
         )
+
 
 def get_job_application_screening_service(
     session: SessionDep,

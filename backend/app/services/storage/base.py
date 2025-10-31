@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Dict
+from typing import BinaryIO
+
 
 class StorageService(ABC):
     """

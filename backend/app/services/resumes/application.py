@@ -78,7 +78,9 @@ class ResumeApplicationService:
             raise HTTPException(status_code=404, detail="Resume not found.")
 
         if resume.user_id != requester.id and not requester.is_superuser:
-            raise HTTPException(status_code=403, detail="Not authorized to access this resume.")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to access this resume."
+            )
 
         return resume
 
@@ -89,7 +91,9 @@ class ResumeApplicationService:
             raise HTTPException(status_code=404, detail="Resume not found.")
 
         if resume.user_id != requester.id and not requester.is_superuser:
-            raise HTTPException(status_code=403, detail="Not authorized to delete this resume.")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to delete this resume."
+            )
 
         file_id = resume.file_id
 

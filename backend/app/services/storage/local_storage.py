@@ -42,6 +42,7 @@ _configured_root = _normalize_root(settings.STORAGE_ROOT)
 _effective_root = _ensure_directory(_configured_root)
 STORAGE_ROOT = str(_effective_root)
 
+
 class LocalStorageService(StorageService):
     """
     Concrete implementation of StorageService using the local filesystem.

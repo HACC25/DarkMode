@@ -5,8 +5,9 @@ from decimal import Decimal
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, Date, DateTime, JSON, Numeric
+from sqlalchemy import JSON, Column, Date, DateTime, Numeric
 from sqlmodel import Field, SQLModel
+
 from app.core.utils import MakeOptional
 
 
@@ -48,9 +49,7 @@ class JobListingBase(SQLModel):
         default=None,
         sa_column=Column(Numeric(10, 2), nullable=True),
     )
-    expires_on: date | None = Field(
-        default=None, sa_column=Column(Date, nullable=True)
-    )
+    expires_on: date | None = Field(default=None, sa_column=Column(Date, nullable=True))
     is_active: bool = Field(default=True)
 
 
@@ -90,9 +89,12 @@ class JobListingParseRequest(SQLModel):
 
     text: str
 
+
 class JobListingParseResponse(JobListingBase, MakeOptional):
     pass
 
+
 class JobListingSchema(JobListingBase):
     """Structured schema produced by the LLM parser."""
+
     pass

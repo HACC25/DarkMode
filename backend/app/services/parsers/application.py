@@ -7,7 +7,6 @@ from fastapi import Depends, HTTPException, UploadFile
 
 # Trigger parser registrations on import via module side effects.
 import app.services.parsers.parsers  # noqa: F401
-
 from app.services.parsers.models import ParsedDocument
 from app.services.parsers.registry import (
     DocumentParserError,
@@ -35,7 +34,9 @@ class ParserApplicationService:
         file.file.seek(0)
 
         try:
-            parser = self._registry.get_parser(extension=extension, mime_type=content_type)
+            parser = self._registry.get_parser(
+                extension=extension, mime_type=content_type
+            )
         except UnsupportedDocumentTypeError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -44,13 +45,16 @@ class ParserApplicationService:
         except DocumentParserError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except Exception as exc:  # pragma: no cover - defensive guardrail
-            raise HTTPException(status_code=500, detail=f"Unexpected parsing failure: {exc}") from exc
+            raise HTTPException(
+                status_code=500, detail=f"Unexpected parsing failure: {exc}"
+            ) from exc
 
         return ParsedDocument(
             filename=filename,
             content_type=content_type,
             text=text,
         )
+
 
 def get_parser_service() -> ParserApplicationService:
     return ParserApplicationService()

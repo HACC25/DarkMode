@@ -42,4 +42,3 @@ async def submit_application_endpoint(
 ) -> JobApplicationRead:
     """Submit a job application on behalf of the current user."""
     return service.submit_application(applicant=current_user, application_in=payload)
-

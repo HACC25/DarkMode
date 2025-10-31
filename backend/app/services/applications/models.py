@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, Enum as SQLAlchemyEnum, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, Text, UniqueConstraint
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlmodel import Field, SQLModel
 
 
@@ -92,4 +93,3 @@ class JobApplicationRead(JobApplicationBase):
     status: JobApplicationStatusEnum
     created_at: datetime
     updated_at: datetime
-

@@ -2,7 +2,8 @@ import uuid
 from enum import Enum
 
 from pydantic import EmailStr
-from sqlalchemy import Column, Enum as SQLAlchemyEnum
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlmodel import Field, Relationship, SQLModel
 
 

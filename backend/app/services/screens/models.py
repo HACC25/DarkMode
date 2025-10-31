@@ -5,11 +5,9 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import Field as PydanticField
-from sqlalchemy import Column, DateTime, JSON, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Field, SQLModel
-
-from app.models import UserPublic
 
 
 def _utcnow() -> datetime:
@@ -78,7 +76,9 @@ class JobApplicationScreen(JobApplicationScreenBase, table=True):
 
     __tablename__ = "job_application_screen"
     __table_args__ = (
-        UniqueConstraint("application_id", name="uq_job_application_screen_application"),
+        UniqueConstraint(
+            "application_id", name="uq_job_application_screen_application"
+        ),
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -104,6 +104,7 @@ class JobApplicationScreenRead(JobApplicationScreenBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+
 
 class JobApplicationScreenAgentPayload(SQLModel):
     """Structured payload returned by the screening LLM."""
