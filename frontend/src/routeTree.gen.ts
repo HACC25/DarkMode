@@ -23,7 +23,9 @@ import { Route as LayoutResumesImport } from './routes/_layout/resumes'
 import { Route as LayoutJobsImport } from './routes/_layout/jobs'
 import { Route as LayoutApplicationsImport } from './routes/_layout/applications'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutApplicationsIndexImport } from './routes/_layout/applications/index'
 import { Route as LayoutJobJobIdImport } from './routes/_layout/job/$jobId'
+import { Route as LayoutApplicationsApplicationIdImport } from './routes/_layout/applications/$applicationId'
 
 // Create/Update Routes
 
@@ -87,10 +89,21 @@ const LayoutAdminRoute = LayoutAdminImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutApplicationsIndexRoute = LayoutApplicationsIndexImport.update({
+  path: '/',
+  getParentRoute: () => LayoutApplicationsRoute,
+} as any)
+
 const LayoutJobJobIdRoute = LayoutJobJobIdImport.update({
   path: '/job/$jobId',
   getParentRoute: () => LayoutRoute,
 } as any)
+
+const LayoutApplicationsApplicationIdRoute =
+  LayoutApplicationsApplicationIdImport.update({
+    path: '/$applicationId',
+    getParentRoute: () => LayoutApplicationsRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -144,9 +157,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/applications/$applicationId': {
+      preLoaderRoute: typeof LayoutApplicationsApplicationIdImport
+      parentRoute: typeof LayoutApplicationsImport
+    }
     '/_layout/job/$jobId': {
       preLoaderRoute: typeof LayoutJobJobIdImport
       parentRoute: typeof LayoutImport
+    }
+    '/_layout/applications/': {
+      preLoaderRoute: typeof LayoutApplicationsIndexImport
+      parentRoute: typeof LayoutApplicationsImport
     }
   }
 }
@@ -156,7 +177,10 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
     LayoutAdminRoute,
-    LayoutApplicationsRoute,
+    LayoutApplicationsRoute.addChildren([
+      LayoutApplicationsApplicationIdRoute,
+      LayoutApplicationsIndexRoute,
+    ]),
     LayoutJobsRoute,
     LayoutResumesRoute,
     LayoutScreensRoute,

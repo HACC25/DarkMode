@@ -40,6 +40,20 @@ export type HTTPValidationError = {
 }
 
 /**
+ * Database model for job applications.
+ */
+export type JobApplication = {
+  job_listing_id: string
+  resume_id?: string | null
+  cover_letter?: string | null
+  id?: string
+  applicant_id: string
+  status?: JobApplicationStatusEnum
+  created_at?: string
+  updated_at?: string
+}
+
+/**
  * Payload for submitting a job application.
  */
 export type JobApplicationCreate = {
@@ -60,8 +74,22 @@ export type JobApplicationRead = {
   status: JobApplicationStatusEnum
   created_at: string
   updated_at: string
-  applicant: UserPublic
-  resume: ResumeRead | null
+  resume: Resume
+  applicant: User
+  screen: JobApplicationScreen
+  job_listing: JobListing
+}
+
+/**
+ * Database model storing automated screening results.
+ */
+export type JobApplicationScreen = {
+  application_id: string
+  minimum_qualifications?: Array<ScreeningReason>
+  preferred_qualifications?: Array<ScreeningReason>
+  id?: string
+  created_at?: string
+  updated_at?: string
 }
 
 /**
@@ -81,6 +109,7 @@ export type JobApplicationScreenRead = {
   id: string
   created_at: string
   updated_at: string
+  application: JobApplication
 }
 
 /**
@@ -91,6 +120,27 @@ export type JobApplicationStatusEnum =
   | "UNDER_REVIEW"
   | "REJECTED"
   | "WITHDRAWN"
+
+/**
+ * Database model for job listings.
+ */
+export type JobListing = {
+  title: string
+  description: string
+  job_type?: JobTypeEnum
+  minimum_qualifications?: Array<string>
+  preferred_qualifications?: Array<string>
+  company_name: string
+  location: string
+  is_remote?: boolean
+  salary_min?: string | null
+  salary_max?: string | null
+  expires_on?: string | null
+  is_active?: boolean
+  id?: string
+  company_id: string
+  posted_on?: string
+}
 
 /**
  * Data required to create a new job listing.
@@ -151,6 +201,7 @@ export type JobListingRead = {
   id: string
   company_id: string
   posted_on: string
+  applications: Array<JobApplication>
 }
 
 /**
@@ -172,6 +223,18 @@ export type PrivateUserCreate = {
   password: string
   full_name: string
   is_verified?: boolean
+}
+
+/**
+ * Database model for stored resumes.
+ */
+export type Resume = {
+  user_id: string
+  file_id: string
+  text_content?: string
+  id?: string
+  created_at?: string
+  updated_at?: string
 }
 
 /**
@@ -211,6 +274,16 @@ export type Token = {
 export type UpdatePassword = {
   current_password: string
   new_password: string
+}
+
+export type User = {
+  email: string
+  is_active?: boolean
+  is_superuser?: boolean
+  full_name?: string | null
+  role?: UserRoleEnum
+  id?: string
+  hashed_password: string
 }
 
 export type UserCreate = {
