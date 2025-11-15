@@ -1,7 +1,9 @@
 import {
   Box,
+  Collapsible,
   Flex,
   Heading,
+  Icon,
   NativeSelect,
   Table,
   Text,
@@ -10,6 +12,7 @@ import {
 } from "@chakra-ui/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useTheme } from "next-themes"
+import { ChevronDown } from "lucide-react"
 import {
   useEffect,
   useMemo,
@@ -224,22 +227,25 @@ function ApplicationDetailPage() {
             shadow="sm"
             borderColor={colors.border}
           >
-            <VStack gap="3" align="stretch">
-              <Heading size="md" textAlign="center">
-                Resume
-              </Heading>
-              {resume.file_id && (
-                <Button
-                  as="a"
-                  href={`/api/v1/files/${resume.file_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <Collapsible.Root defaultOpen>
+              <VStack gap="3" align="stretch">
+                <Collapsible.Trigger
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  width="100%"
+                  css={{ "&[data-state=open] svg": { transform: "rotate(180deg)" } }}
                 >
-                  View original resume
-                </Button>
-              )}
-              {/*{resume.text_content && (<Text whiteSpace="pre-wrap">{resume.text_content}</Text>)}*/}
-            </VStack>
+                  <Heading size="md">Resume</Heading>
+                  <Icon as={ChevronDown} transition="transform 0.2s ease" />
+                </Collapsible.Trigger>
+                {resume.text_content && (
+                  <Collapsible.Content>
+                    <Text whiteSpace="pre-wrap">{resume.text_content}</Text>
+                  </Collapsible.Content>
+                )}
+              </VStack>
+            </Collapsible.Root>
           </Box>
         )}
 

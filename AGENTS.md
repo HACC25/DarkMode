@@ -1,5 +1,16 @@
 do not write tests, do not run tests
-do not format or lint
+
+for front end.
+- do not add to routes folder unless IT IS a route, do not add any helper/utils files there.
+- do not ever edit routeTree.gen.ts, it will get overwritten anyways.
+- do not touch/edit generated type files in src/client folder this is created from the openapi spec.
+  "scripts": {
+  "dev": "vite",
+  "build": "tsc -p tsconfig.build.json && vite build",
+  "lint": "biome check --apply-unsafe --no-errors-on-unmatched --files-ignore-unknown=true ./",
+  "preview": "vite preview",
+  "generate-client": "openapi-ts"
+  },
 
 always use UUIDs for primary keys
 
