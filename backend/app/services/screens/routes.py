@@ -7,6 +7,7 @@ from app.services.screens.application import JobApplicationScreeningServiceDep
 from app.services.screens.models import (
     JobApplicationScreenCreate,
     JobApplicationScreenRead,
+    JobApplicationScreenUpdate,
 )
 
 router = APIRouter(prefix="/screens", tags=["screens"])
@@ -43,3 +44,18 @@ async def create_screen_endpoint(
 ) -> JobApplicationScreenRead:
     """Screen a job application against its listing."""
     return await service.screen_application(requester=current_user, payload=payload)
+
+
+@router.put("/application/{application_id}", response_model=JobApplicationScreenRead)
+async def upsert_application_screen_endpoint(
+    application_id: UUID,
+    payload: JobApplicationScreenUpdate,
+    current_user: CurrentUser,
+    service: JobApplicationScreeningServiceDep,
+) -> JobApplicationScreenRead:
+    """Create or update manual screening results."""
+    return service.save_manual_results(
+        requester=current_user,
+        application_id=application_id,
+        payload=payload,
+    )

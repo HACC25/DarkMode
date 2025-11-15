@@ -1,15 +1,39 @@
-import { Box, Flex, Heading, Table, Text, VStack } from "@chakra-ui/react"
+import {
+  Box,
+  Flex,
+  Heading,
+  NativeSelect,
+  Table,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useTheme } from "next-themes"
-import type { ReactNode } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react"
 
-import type { ScreeningReason } from "@/client"
+import type {
+  JobApplicationScreenUpdate,
+  ScreeningReason,
+  ScreeningReasonStatusEnum,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { useApplicationQuery } from "@/queries/applications"
 import { useJobListingsQuery } from "@/queries/jobs"
-import { useCreateScreenMutation } from "@/queries/screens"
+import {
+  useCreateScreenMutation,
+  useUpdateScreenMutation,
+} from "@/queries/screens"
 
 export const Route = createFileRoute("/_layout/applications/$applicationId")({
   component: ApplicationDetailPage,
@@ -29,6 +53,15 @@ function ApplicationDetailPage() {
     },
     onError: () => {
       showErrorToast("Could not start screen.")
+    },
+  })
+
+  const updateScreen = useUpdateScreenMutation({
+    onSuccess: () => {
+      showSuccessToast("Screening results updated.")
+    },
+    onError: () => {
+      showErrorToast("Could not save screening results.")
     },
   })
 
@@ -57,6 +90,7 @@ function ApplicationDetailPage() {
   const applicant = application.applicant
   const resume = application.resume
   const screen = application.screen
+  const canEditScreen = Boolean(user?.role === "COMPANY" || user?.is_superuser)
   const themeMode = resolvedTheme === "dark" ? "dark" : "light"
   const colors: ColorTokens = {
     muted: themeMode === "dark" ? "gray.300" : "gray.600",
@@ -68,6 +102,13 @@ function ApplicationDetailPage() {
   const handleScreen = () => {
     createScreen.mutate({
       application_id: application.id,
+    })
+  }
+
+  const handleSaveQualifications = async (payload: JobApplicationScreenUpdate) => {
+    await updateScreen.mutateAsync({
+      applicationId: application.id,
+      requestBody: payload,
     })
   }
 
@@ -165,6 +206,9 @@ function ApplicationDetailPage() {
           minimumEvaluations={screen?.minimum_qualifications ?? []}
           preferredEvaluations={screen?.preferred_qualifications ?? []}
           colors={colors}
+          canEdit={canEditScreen}
+          onSaveResults={handleSaveQualifications}
+          isSaving={updateScreen.isPending}
         />
 
         {resume && (
@@ -234,16 +278,25 @@ type QualificationsComparisonProps = {
   minimumEvaluations: ScreeningReason[]
   preferredEvaluations: ScreeningReason[]
   colors: ColorTokens
+  canEdit: boolean
+  onSaveResults: (payload: JobApplicationScreenUpdate) => Promise<void> | void
+  isSaving: boolean
 }
 
-const statusLabel: Record<string, string> = {
+type EditableQualification = {
+  requirement: string
+  status: ScreeningReasonStatusEnum | ""
+  reason: string
+}
+
+const statusLabel: Record<ScreeningReasonStatusEnum, string> = {
   HIGHLY_QUALIFIED: "Highly qualified",
   QUALIFIED: "Qualified",
   MEETS: "Meets expectations",
   NOT_QUALIFIED: "Not qualified",
 }
 
-const statusColor: Record<string, string> = {
+const statusColor: Record<ScreeningReasonStatusEnum, string> = {
   HIGHLY_QUALIFIED: "green.500",
   QUALIFIED: "green.400",
   MEETS: "blue.400",
@@ -256,9 +309,120 @@ function QualificationsComparison({
   minimumEvaluations,
   preferredEvaluations,
   colors,
+  canEdit,
+  onSaveResults,
+  isSaving,
 }: QualificationsComparisonProps) {
-  const renderRows = (requirements: string[], evaluations: ScreeningReason[]) => {
-    if (requirements.length === 0) {
+  const statusOptions = useMemo(
+    () => Object.entries(statusLabel) as [ScreeningReasonStatusEnum, string][],
+    [],
+  )
+  const [isEditing, setIsEditing] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [minimumRows, setMinimumRows] = useState<EditableQualification[]>(() =>
+    buildEditableRows(minimumRequirements, minimumEvaluations),
+  )
+  const [preferredRows, setPreferredRows] = useState<EditableQualification[]>(() =>
+    buildEditableRows(preferredRequirements, preferredEvaluations),
+  )
+  const lastSyncedSignatures = useRef({ min: "", pref: "" })
+
+  const minimumSignature = useMemo(
+    () =>
+      JSON.stringify({
+        requirements: minimumRequirements,
+        evaluations: minimumEvaluations,
+      }),
+    [minimumRequirements, minimumEvaluations],
+  )
+  const preferredSignature = useMemo(
+    () =>
+      JSON.stringify({
+        requirements: preferredRequirements,
+        evaluations: preferredEvaluations,
+      }),
+    [preferredRequirements, preferredEvaluations],
+  )
+
+  useEffect(() => {
+    if (isEditing) {
+      return
+    }
+    const hasChanged =
+      lastSyncedSignatures.current.min !== minimumSignature ||
+      lastSyncedSignatures.current.pref !== preferredSignature
+    if (!hasChanged) {
+      return
+    }
+
+    setMinimumRows(buildEditableRows(minimumRequirements, minimumEvaluations))
+    setPreferredRows(buildEditableRows(preferredRequirements, preferredEvaluations))
+    lastSyncedSignatures.current = {
+      min: minimumSignature,
+      pref: preferredSignature,
+    }
+  }, [
+    isEditing,
+    minimumRequirements,
+    minimumEvaluations,
+    preferredRequirements,
+    preferredEvaluations,
+    minimumSignature,
+    preferredSignature,
+  ])
+
+  const handleStartEditing = () => {
+    setValidationError(null)
+    setIsEditing(true)
+  }
+
+  const handleCancelEditing = () => {
+    setValidationError(null)
+    setIsEditing(false)
+    setMinimumRows(buildEditableRows(minimumRequirements, minimumEvaluations))
+    setPreferredRows(buildEditableRows(preferredRequirements, preferredEvaluations))
+    lastSyncedSignatures.current = {
+      min: minimumSignature,
+      pref: preferredSignature,
+    }
+  }
+
+  const handleSave = async () => {
+    const missingStatus = [...minimumRows, ...preferredRows].some(
+      (row) => row.requirement && row.status === "",
+    )
+    if (missingStatus) {
+      setValidationError("Please select a result for every qualification.")
+      return
+    }
+
+    setValidationError(null)
+    try {
+      await onSaveResults({
+        minimum_qualifications: minimumRows.map((row) => ({
+          status: row.status as ScreeningReasonStatusEnum,
+          reason: row.reason,
+        })),
+        preferred_qualifications: preferredRows.map((row) => ({
+          status: row.status as ScreeningReasonStatusEnum,
+          reason: row.reason,
+        })),
+      })
+      lastSyncedSignatures.current = {
+        min: minimumSignature,
+        pref: preferredSignature,
+      }
+      setIsEditing(false)
+    } catch (error) {
+      setValidationError("Could not save results. Please try again.")
+    }
+  }
+
+  const renderRows = (
+    rows: EditableQualification[],
+    setRows: Dispatch<SetStateAction<EditableQualification[]>>,
+  ) => {
+    if (rows.length === 0) {
       return (
         <Table.Row>
           <Table.Cell colSpan={2} width="50%">
@@ -268,29 +432,71 @@ function QualificationsComparison({
       )
     }
 
-    return requirements.map((requirement, index) => {
-      const evaluation =
-        evaluations[index] ??
-        evaluations.find((item) =>
-          item.reason.toLowerCase().includes(requirement.toLowerCase()),
+    return rows.map((row, index) => {
+      if (isEditing) {
+        return (
+          <Table.Row key={`${row.requirement}-${index}`}>
+            <Table.Cell width="50%">
+              <Text whiteSpace="pre-wrap">{row.requirement}</Text>
+            </Table.Cell>
+            <Table.Cell width="50%">
+              <VStack align="stretch" gap="2">
+                <NativeSelect.Root size="sm">
+                  <NativeSelect.Field
+                    aria-label={`Applicant result for ${row.requirement}`}
+                    value={row.status}
+                    onChange={(event) =>
+                      updateEditableRow(setRows, index, {
+                        status: event.target.value as ScreeningReasonStatusEnum | "",
+                      })
+                    }
+                  >
+                    <option value="">Select result</option>
+                    {statusOptions.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+                <Textarea
+                  aria-label={`Reason for ${row.requirement}`}
+                  placeholder="Add context (optional)"
+                  size="sm"
+                  value={row.reason}
+                  onChange={(event) =>
+                    updateEditableRow(setRows, index, { reason: event.target.value })
+                  }
+                  resize="vertical"
+                />
+              </VStack>
+            </Table.Cell>
+          </Table.Row>
         )
-      const status = evaluation?.status
+      }
+
+      const status = row.status
       const fallback = colors.muted
-      const label = status ? statusLabel[status] ?? status : "Not evaluated"
-      const color = status ? statusColor[status] ?? fallback : fallback
+      const label = status
+        ? statusLabel[status as ScreeningReasonStatusEnum] ?? status
+        : "Not evaluated"
+      const color = status
+        ? statusColor[status as ScreeningReasonStatusEnum] ?? fallback
+        : fallback
 
       return (
-        <Table.Row key={`${requirement}-${index}`}>
+        <Table.Row key={`${row.requirement}-${index}`}>
           <Table.Cell width="50%">
-            <Text whiteSpace="pre-wrap">{requirement}</Text>
+            <Text whiteSpace="pre-wrap">{row.requirement}</Text>
           </Table.Cell>
           <Table.Cell width="50%">
             <Text color={color} fontWeight="medium">
               {label}
             </Text>
-            {evaluation?.reason && (
+            {row.reason && (
               <Text color={colors.muted} whiteSpace="pre-wrap">
-                {evaluation.reason}
+                {row.reason}
               </Text>
             )}
           </Table.Cell>
@@ -315,18 +521,82 @@ function QualificationsComparison({
         <VStack align="stretch" gap="3">
           <SectionTable
             title="Minimum qualifications"
-            rows={renderRows(minimumRequirements, minimumEvaluations)}
+            rows={renderRows(minimumRows, setMinimumRows)}
             colors={colors}
           />
           <SectionTable
             title="Preferred qualifications"
-            rows={renderRows(preferredRequirements, preferredEvaluations)}
+            rows={renderRows(preferredRows, setPreferredRows)}
             colors={colors}
           />
         </VStack>
+        {canEdit && (
+          <VStack align="stretch" gap="3">
+            {isEditing && validationError && (
+              <Text color="red.400" fontSize="sm" textAlign="center">
+                {validationError}
+              </Text>
+            )}
+            <Flex justify="flex-end" wrap="wrap" gap="3">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEditing}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    colorPalette="gray"
+                    onClick={handleSave}
+                    loading={isSaving}
+                  >
+                    Save results
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={handleStartEditing} disabled={isSaving}>
+                  Edit applicant results
+                </Button>
+              )}
+            </Flex>
+          </VStack>
+        )}
       </VStack>
     </Box>
   )
+}
+
+function updateEditableRow(
+  setRows: Dispatch<SetStateAction<EditableQualification[]>>,
+  index: number,
+  updates: Partial<EditableQualification>,
+) {
+  setRows((previous) => {
+    const nextRows = [...previous]
+    nextRows[index] = { ...nextRows[index], ...updates }
+    return nextRows
+  })
+}
+
+function buildEditableRows(
+  requirements: string[],
+  evaluations: ScreeningReason[],
+): EditableQualification[] {
+  return requirements.map((requirement, index) => {
+    const evaluation =
+      evaluations[index] ??
+      evaluations.find((item) =>
+        item.reason?.toLowerCase().includes(requirement.toLowerCase()),
+      )
+
+    return {
+      requirement,
+      status: evaluation?.status ?? "",
+      reason: evaluation?.reason ?? "",
+    }
+  })
 }
 
 type SummaryCardItem = {

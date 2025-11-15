@@ -17,6 +17,7 @@ from app.services.screens.models import (
     JobApplicationScreen,
     JobApplicationScreenAgentPayload,
     JobApplicationScreenCreate,
+    JobApplicationScreenUpdate,
 )
 
 
@@ -142,6 +143,75 @@ class JobApplicationScreeningService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to store screening results: {exc}",
+            ) from exc
+
+    def save_manual_results(
+        self,
+        *,
+        requester: User,
+        application_id: UUID,
+        payload: JobApplicationScreenUpdate,
+    ) -> JobApplicationScreen:
+        """
+        Allow an authorized company user to edit screening results.
+        """
+        application = self._session.get(JobApplication, application_id)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job application not found.",
+            )
+
+        job_listing = self._session.get(JobListing, application.job_listing_id)
+        if not job_listing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job listing not found for this application.",
+            )
+
+        if not requester.is_superuser and job_listing.company_id != requester.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to update this screening result.",
+            )
+
+        screen = self._session.exec(
+            select(JobApplicationScreen).where(
+                JobApplicationScreen.application_id == application.id
+            )
+        ).first()
+
+        if not screen:
+            screen = JobApplicationScreen(application_id=application.id)
+            self._session.add(screen)
+
+        if payload.minimum_qualifications is not None:
+            screen.minimum_qualifications = payload.minimum_qualifications
+
+        if payload.preferred_qualifications is not None:
+            screen.preferred_qualifications = payload.preferred_qualifications
+
+        if (
+            payload.minimum_qualifications is None
+            and payload.preferred_qualifications is None
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No screening results provided.",
+            )
+
+        try:
+            application.status = JobApplicationStatusEnum.UNDER_REVIEW
+            self._session.add(application)
+            self._session.add(screen)
+            self._session.commit()
+            self._session.refresh(screen)
+            return screen
+        except Exception as exc:  # pragma: no cover - re-raised as HTTP error
+            self._session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update screening results: {exc}",
             ) from exc
 
     def list_screens(self, *, requester: User) -> list[JobApplicationScreen]:

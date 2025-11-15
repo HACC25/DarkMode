@@ -6,6 +6,7 @@ from app.models import (
     JobApplicationScreenBase,
     JobApplicationScreenCreate,
     JobApplicationScreenRead,
+    JobApplicationScreenUpdate,
     ScreeningReason,
     ScreeningReasonListType,
     ScreeningReasonStatusEnum,
@@ -18,6 +19,7 @@ __all__ = [
     "JobApplicationScreenBase",
     "JobApplicationScreen",
     "JobApplicationScreenCreate",
+    "JobApplicationScreenUpdate",
     "JobApplicationScreenRead",
     "JobApplicationScreenAgentPayload",
 ]

@@ -413,6 +413,13 @@ class JobApplicationScreenCreate(SQLModel):
     application_id: uuid.UUID
 
 
+class JobApplicationScreenUpdate(SQLModel):
+    """Payload for manually updating screening results."""
+
+    minimum_qualifications: list[ScreeningReason] | None = None
+    preferred_qualifications: list[ScreeningReason] | None = None
+
+
 class JobApplicationScreenRead(JobApplicationScreenBase):
     """Public representation of screening results."""
 

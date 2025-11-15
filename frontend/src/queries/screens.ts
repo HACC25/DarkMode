@@ -10,8 +10,10 @@ import {
   type JobApplicationScreenCreate,
   type JobApplicationScreenRead,
   type ScreensGetScreenEndpointData,
+  type ScreensUpsertApplicationScreenEndpointData,
   ScreensService,
 } from "@/client"
+import { applicationsKeys } from "./applications"
 
 export const screensKeys = {
   all: ["screens"] as const,
@@ -53,6 +55,27 @@ export function useCreateScreenMutation(
       ScreensService.createScreenEndpoint({ requestBody: payload }),
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: screensKeys.all })
+      options.onSuccess?.(...args)
+    },
+    ...options,
+  })
+}
+
+export function useUpdateScreenMutation(
+  options: UseMutationOptions<
+    JobApplicationScreenRead,
+    Error,
+    ScreensUpsertApplicationScreenEndpointData
+  > = {},
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload) =>
+      ScreensService.upsertApplicationScreenEndpoint(payload),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: screensKeys.all })
+      queryClient.invalidateQueries({ queryKey: applicationsKeys.all })
       options.onSuccess?.(...args)
     },
     ...options,
