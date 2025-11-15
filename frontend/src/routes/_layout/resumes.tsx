@@ -1,7 +1,9 @@
-import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react"
+import { Box, Flex, Heading, Icon, Input, Stack, Text } from "@chakra-ui/react"
 import { createFileRoute } from "@tanstack/react-router"
+import { ChevronDown } from "lucide-react"
 import { useRef, useState } from "react"
 
+import type { ResumeRead } from "@/client"
 import { Button } from "@/components/ui/button"
 import useCustomToast from "@/hooks/useCustomToast"
 import useAuth from "@/hooks/useAuth"
@@ -124,30 +126,81 @@ function ResumesPage() {
         )}
         <Stack gap={3}>
           {(resumes ?? []).map((resume) => (
-            <Box
+            <ResumeCard
               key={resume.id}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              borderWidth="1px"
-              borderRadius="md"
-              p={3}
-            >
-              <Text>
-                Uploaded on {new Date(resume.created_at).toLocaleString()}
-              </Text>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => deleteMutation.mutate(resume.id)}
-                loading={deleteMutation.isPending}
-              >
-                Delete
-              </Button>
-            </Box>
+              resume={resume}
+              onDelete={() => deleteMutation.mutate(resume.id)}
+              isDeleting={
+                deleteMutation.isPending && deleteMutation.variables === resume.id
+              }
+            />
           ))}
         </Stack>
       </Stack>
     </Stack>
+  )
+}
+
+type ResumeCardProps = {
+  resume: ResumeRead
+  onDelete: () => void
+  isDeleting: boolean
+}
+
+function ResumeCard({ resume, onDelete, isDeleting }: ResumeCardProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const hasTextContent = Boolean(resume.text_content?.trim())
+  const uploadedLabel = new Date(resume.created_at).toLocaleString()
+
+  return (
+    <Box borderWidth="1px" borderRadius="md" p={3}>
+      <Stack gap={3}>
+        <Flex
+          align={{ base: "flex-start", md: "center" }}
+          justify="space-between"
+          flexDirection={{ base: "column", md: "row" }}
+          gap={3}
+          flexWrap="wrap"
+        >
+          <Text>Uploaded on {uploadedLabel}</Text>
+          <Stack direction="row" gap={2} flexWrap="wrap" justify="flex-end">
+            {hasTextContent && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsOpen((previous) => !previous)}
+                aria-expanded={isOpen}
+              >
+                {isOpen ? "Hide text content" : "View text content"}
+                <Icon
+                  as={ChevronDown}
+                  transition="transform 0.2s ease"
+                  transform={isOpen ? "rotate(180deg)" : undefined}
+                />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onDelete}
+              loading={isDeleting}
+            >
+              Delete
+            </Button>
+          </Stack>
+        </Flex>
+        {hasTextContent && isOpen && (
+          <Box borderWidth="1px" borderRadius="md" p={3} bg="gray.50" _dark={{ bg: "gray.900" }}>
+            <Text whiteSpace="pre-wrap">{resume.text_content}</Text>
+          </Box>
+        )}
+        {!hasTextContent && (
+          <Text color="gray.500" fontSize="sm">
+            Text preview is not available for this resume.
+          </Text>
+        )}
+      </Stack>
+    </Box>
   )
 }
