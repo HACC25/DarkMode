@@ -10,8 +10,11 @@ import {
   type ApplicationsGetApplicationEndpointData,
   type JobApplicationCreate,
   type JobApplicationRead,
+  type JobApplicationStatusEnum,
   ApplicationsService,
+  OpenAPI,
 } from "@/client"
+import { request as httpRequest } from "@/client/core/request"
 
 export const applicationsKeys = {
   all: ["applications"] as const,
@@ -48,6 +51,37 @@ export function useSubmitApplicationMutation(
       ApplicationsService.submitApplicationEndpoint({
         requestBody: payload,
       }),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: applicationsKeys.all })
+      options.onSuccess?.(...args)
+    },
+    ...options,
+  })
+}
+
+type ApplicationStatusMutationVariables = {
+  applicationId: string
+  status: JobApplicationStatusEnum
+}
+
+function updateApplicationStatusRequest(variables: ApplicationStatusMutationVariables) {
+  return httpRequest<JobApplicationRead>(OpenAPI, {
+    method: "PUT",
+    url: "/api/v1/applications/{application_id}/status",
+    path: { application_id: variables.applicationId },
+    body: { status: variables.status },
+    mediaType: "application/json",
+    errors: { 422: "Validation Error" },
+  })
+}
+
+export function useUpdateApplicationStatusMutation(
+  options: UseMutationOptions<JobApplicationRead, Error, ApplicationStatusMutationVariables> = {},
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateApplicationStatusRequest,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: applicationsKeys.all })
       options.onSuccess?.(...args)

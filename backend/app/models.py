@@ -257,6 +257,7 @@ class JobApplicationStatusEnum(str, Enum):
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
     WITHDRAWN = "WITHDRAWN"
+    TEST = "TEST"
 
 
 class JobApplicationBase(SQLModel):

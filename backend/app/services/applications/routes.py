@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, status
@@ -9,6 +10,8 @@ from app.services.applications.models import (
     JobApplicationRead,
     JobApplicationStatusUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -56,11 +59,32 @@ async def update_application_status_endpoint(
     service: JobApplicationServiceDep,
 ) -> JobApplicationRead:
     """Transition an application's status while enforcing workflow rules."""
-    return service.update_status(
-        application_id=application_id,
-        requester=current_user,
-        new_status=payload.status,
+    logger.info(
+        "Application status update requested: application_id=%s new_status=%s user_id=%s",
+        application_id,
+        payload.status,
+        current_user.id,
     )
+    try:
+        updated = service.update_status(
+            application_id=application_id,
+            requester=current_user,
+            new_status=payload.status,
+        )
+        logger.info(
+            "Application status updated successfully: application_id=%s status=%s",
+            application_id,
+            updated.status,
+        )
+        return updated
+    except Exception:
+        logger.exception(
+            "Failed to update application status: application_id=%s new_status=%s user_id=%s",
+            application_id,
+            payload.status,
+            current_user.id,
+        )
+        raise
 
 
 @router.post("/{application_id}/withdraw", response_model=JobApplicationRead)

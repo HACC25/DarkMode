@@ -1,11 +1,18 @@
 import { Badge, Box, Flex, Heading, HStack, Text, VStack } from "@chakra-ui/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useTheme } from "next-themes"
-import { useMemo, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 
-import type { JobApplicationRead, JobListing, JobListingRead } from "@/client"
+import type {
+  JobApplicationRead,
+  JobApplicationStatusEnum,
+  JobListing,
+  JobListingRead,
+} from "@/client"
+import { Button } from "@/components/ui/button"
 import useAuth from "@/hooks/useAuth"
-import { useApplicationsQuery } from "@/queries/applications"
+import useCustomToast from "@/hooks/useCustomToast"
+import { useApplicationsQuery, useUpdateApplicationStatusMutation } from "@/queries/applications"
 import { useJobListingsQuery } from "@/queries/jobs"
 import {
   jobApplicationStatusLabels,
@@ -108,6 +115,11 @@ function CompanyApplicationSections({ applications, jobById, colors }: Applicati
                     job={application.job_listing ?? jobById.get(application.job_listing_id)}
                     colors={colors}
                     variant="company"
+                    statusActions={
+                      status === "UNDER_REVIEW" ? (
+                        <UnderReviewActions applicationId={application.id} />
+                      ) : undefined
+                    }
                   />
                 ))}
               </VStack>
@@ -140,9 +152,10 @@ type ApplicationCardProps = {
   job: JobListing | JobListingRead | undefined
   colors: ColorTokens
   variant: "company" | "applicant"
+  statusActions?: ReactNode
 }
 
-function ApplicationCard({ application, job, colors, variant }: ApplicationCardProps) {
+function ApplicationCard({ application, job, colors, variant, statusActions }: ApplicationCardProps) {
   const status = application.status
   const palette = jobApplicationStatusPalette[status]
   const statusLabel = jobApplicationStatusLabels[status]
@@ -186,8 +199,64 @@ function ApplicationCard({ application, job, colors, variant }: ApplicationCardP
             </Text>
           )}
         </Flex>
+        {statusActions ? <Box pt="2">{statusActions}</Box> : null}
       </VStack>
     </CardShell>
+  )
+}
+
+type UnderReviewActionsProps = {
+  applicationId: string
+}
+
+function UnderReviewActions({ applicationId }: UnderReviewActionsProps) {
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const [pendingStatus, setPendingStatus] = useState<JobApplicationStatusEnum | null>(null)
+  const updateStatus = useUpdateApplicationStatusMutation({
+    onSuccess: (_, variables) => {
+      if (variables?.status === "INTERVIEW") {
+        showSuccessToast("Application moved to interview.")
+      } else if (variables?.status === "REJECTED") {
+        showSuccessToast("Application marked as rejected.")
+      } else {
+        showSuccessToast("Application status updated.")
+      }
+    },
+    onError: () => {
+      showErrorToast("Could not update the application status.")
+    },
+    onSettled: () => {
+      setPendingStatus(null)
+    },
+  })
+
+  const handleUpdateStatus = (status: JobApplicationStatusEnum) => {
+    setPendingStatus(status)
+    updateStatus.mutate({ applicationId, status })
+  }
+
+  return (
+    <HStack gap="3" flexWrap="wrap">
+      <Button
+        size="sm"
+        colorPalette="purple"
+        loading={updateStatus.isPending && pendingStatus === "INTERVIEW"}
+        disabled={updateStatus.isPending}
+        onClick={() => handleUpdateStatus("INTERVIEW")}
+      >
+        Move to interview
+      </Button>
+      <Button
+        size="sm"
+        colorPalette="red"
+        variant="outline"
+        loading={updateStatus.isPending && pendingStatus === "REJECTED"}
+        disabled={updateStatus.isPending}
+        onClick={() => handleUpdateStatus("REJECTED")}
+      >
+        Reject application
+      </Button>
+    </HStack>
   )
 }
 

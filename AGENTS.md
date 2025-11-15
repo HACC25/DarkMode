@@ -12,6 +12,8 @@ for front end.
   "generate-client": "openapi-ts"
   },
 
+for new routes, always add new hooks in frontend/src/hooks if they do not exist already.
+
 always use UUIDs for primary keys
 
 generate migration with
