@@ -86,6 +86,7 @@ function JobsPage() {
   const [parseMode, setParseMode] = useState<"text" | "file">("text")
   const [parseTextInput, setParseTextInput] = useState("")
   const [parseFile, setParseFile] = useState<File | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const createListingForm = useForm<JobListingFormValues>({
     defaultValues: {
@@ -181,6 +182,17 @@ function JobsPage() {
       }),
     [jobListings],
   )
+  const filteredJobs = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase()
+    if (!normalizedSearch) {
+      return sortedJobs
+    }
+    return sortedJobs.filter((job) => {
+      const haystack = `${job.title} ${job.company_name ?? ""} ${job.location ?? ""}`.toLowerCase()
+      return haystack.includes(normalizedSearch)
+    })
+  }, [searchQuery, sortedJobs])
+  const hasJobListings = sortedJobs.length > 0
 
   const handleApply = (job: JobListingRead) => {
     setSelectedJob(job)
@@ -705,12 +717,24 @@ function JobsPage() {
         )}
 
         <VStack align="stretch" gap="4">
+          <Field label="Search jobs">
+            <Input
+              placeholder="Search by title, company, or location"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </Field>
           {isLoading && <Text color={colors.muted}>Loading job listings...</Text>}
-          {!isLoading && sortedJobs.length === 0 && (
+          {!isLoading && !hasJobListings && (
             <Text color={colors.muted}>No job listings found.</Text>
           )}
+          {!isLoading && hasJobListings && filteredJobs.length === 0 && (
+            <Text color={colors.muted}>
+              No job listings match "{searchQuery.trim()}".
+            </Text>
+          )}
           {!isLoading &&
-            sortedJobs.map((job) => (
+            filteredJobs.map((job) => (
               <JobCard
                 key={job.id}
                 job={job}
