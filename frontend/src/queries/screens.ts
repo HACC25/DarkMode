@@ -55,6 +55,7 @@ export function useCreateScreenMutation(
       ScreensService.createScreenEndpoint({ requestBody: payload }),
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: screensKeys.all })
+      queryClient.invalidateQueries({ queryKey: applicationsKeys.all })
       options.onSuccess?.(...args)
     },
     ...options,

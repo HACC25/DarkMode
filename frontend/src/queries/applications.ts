@@ -79,13 +79,14 @@ export function useUpdateApplicationStatusMutation(
   options: UseMutationOptions<JobApplicationRead, Error, ApplicationStatusMutationVariables> = {},
 ) {
   const queryClient = useQueryClient()
+  const { onSuccess, ...restOptions } = options
 
   return useMutation({
     mutationFn: updateApplicationStatusRequest,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: applicationsKeys.all })
-      options.onSuccess?.(...args)
+      onSuccess?.(...args)
     },
-    ...options,
+    ...restOptions,
   })
 }

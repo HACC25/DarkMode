@@ -120,6 +120,8 @@ function CompanyApplicationSections({ applications, jobById, colors }: Applicati
                     statusActions={
                       status === "UNDER_REVIEW" ? (
                         <UnderReviewActions applicationId={application.id} />
+                      ) : status === "INTERVIEW" ? (
+                        <InterviewStageActions applicationId={application.id} />
                       ) : undefined
                     }
                   />
@@ -273,6 +275,61 @@ function UnderReviewActions({ applicationId }: UnderReviewActionsProps) {
         onClick={() => handleUpdateStatus("INTERVIEW")}
       >
         Move to interview
+      </Button>
+      <Button
+        size="sm"
+        colorPalette="red"
+        variant="outline"
+        loading={updateStatus.isPending && pendingStatus === "REJECTED"}
+        disabled={updateStatus.isPending}
+        onClick={() => handleUpdateStatus("REJECTED")}
+      >
+        Reject application
+      </Button>
+    </HStack>
+  )
+}
+
+type InterviewStageActionsProps = {
+  applicationId: string
+}
+
+function InterviewStageActions({ applicationId }: InterviewStageActionsProps) {
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const [pendingStatus, setPendingStatus] = useState<JobApplicationStatusEnum | null>(null)
+  const updateStatus = useUpdateApplicationStatusMutation({
+    onSuccess: (_, variables) => {
+      if (variables?.status === "ACCEPTED") {
+        showSuccessToast("Application marked as accepted.")
+      } else if (variables?.status === "REJECTED") {
+        showSuccessToast("Application marked as rejected.")
+      } else {
+        showSuccessToast("Application status updated.")
+      }
+    },
+    onError: () => {
+      showErrorToast("Could not update the application status.")
+    },
+    onSettled: () => {
+      setPendingStatus(null)
+    },
+  })
+
+  const handleUpdateStatus = (status: JobApplicationStatusEnum) => {
+    setPendingStatus(status)
+    updateStatus.mutate({ applicationId, status })
+  }
+
+  return (
+    <HStack gap="3" flexWrap="wrap">
+      <Button
+        size="sm"
+        colorPalette="green"
+        loading={updateStatus.isPending && pendingStatus === "ACCEPTED"}
+        disabled={updateStatus.isPending}
+        onClick={() => handleUpdateStatus("ACCEPTED")}
+      >
+        Mark as accepted
       </Button>
       <Button
         size="sm"
