@@ -7,24 +7,15 @@ import type { JobApplicationRead, JobListing, JobListingRead } from "@/client"
 import useAuth from "@/hooks/useAuth"
 import { useApplicationsQuery } from "@/queries/applications"
 import { useJobListingsQuery } from "@/queries/jobs"
+import {
+  jobApplicationStatusLabels,
+  jobApplicationStatusOrder,
+  jobApplicationStatusPalette,
+} from "@/utils/job-application-status"
 
 export const Route = createFileRoute("/_layout/applications/")({
   component: ApplicationsIndexPage,
 })
-
-const statusLabels: Record<JobApplicationRead["status"], string> = {
-  SUBMITTED: "Submitted",
-  UNDER_REVIEW: "Under review",
-  REJECTED: "Rejected",
-  WITHDRAWN: "Withdrawn",
-}
-
-const statusPalette: Record<JobApplicationRead["status"], string> = {
-  SUBMITTED: "blue",
-  UNDER_REVIEW: "orange",
-  REJECTED: "red",
-  WITHDRAWN: "gray",
-}
 
 function ApplicationsIndexPage() {
   const { user } = useAuth()
@@ -91,12 +82,7 @@ type ApplicationListProps = {
 }
 
 function CompanyApplicationSections({ applications, jobById, colors }: ApplicationListProps) {
-  const orderedStatuses: JobApplicationRead["status"][] = [
-    "SUBMITTED",
-    "UNDER_REVIEW",
-    "REJECTED",
-    "WITHDRAWN",
-  ]
+  const orderedStatuses = jobApplicationStatusOrder
 
   return (
     <VStack align="stretch" gap={{ base: "5", md: "6" }}>
@@ -106,8 +92,8 @@ function CompanyApplicationSections({ applications, jobById, colors }: Applicati
           <CardShell key={status} colors={colors}>
             <VStack align="stretch" gap="4">
               <HStack justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="2">
-                <Heading size="md">{statusLabels[status]}</Heading>
-                <Badge colorPalette={statusPalette[status]} variant="subtle">
+                <Heading size="md">{jobApplicationStatusLabels[status]}</Heading>
+                <Badge colorPalette={jobApplicationStatusPalette[status]} variant="subtle">
                   {items.length} application{items.length === 1 ? "" : "s"}
                 </Badge>
               </HStack>
@@ -158,8 +144,8 @@ type ApplicationCardProps = {
 
 function ApplicationCard({ application, job, colors, variant }: ApplicationCardProps) {
   const status = application.status
-  const palette = statusPalette[status]
-  const statusLabel = statusLabels[status]
+  const palette = jobApplicationStatusPalette[status]
+  const statusLabel = jobApplicationStatusLabels[status]
   const submittedOn = new Date(application.created_at).toLocaleString()
 
   return (

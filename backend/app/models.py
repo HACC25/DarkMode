@@ -244,6 +244,8 @@ class JobApplicationStatusEnum(str, Enum):
 
     SUBMITTED = "SUBMITTED"
     UNDER_REVIEW = "UNDER_REVIEW"
+    INTERVIEW = "INTERVIEW"
+    ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
     WITHDRAWN = "WITHDRAWN"
 

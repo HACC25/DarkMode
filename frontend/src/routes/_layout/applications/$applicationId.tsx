@@ -34,6 +34,7 @@ import {
   useCreateScreenMutation,
   useUpdateScreenMutation,
 } from "@/queries/screens"
+import { jobApplicationStatusLabels } from "@/utils/job-application-status"
 
 export const Route = createFileRoute("/_layout/applications/$applicationId")({
   component: ApplicationDetailPage,
@@ -126,7 +127,10 @@ function ApplicationDetailPage() {
           <SummaryCard
             title="Application"
             items={[
-              { label: "Status", value: application.status },
+              {
+                label: "Status",
+                value: jobApplicationStatusLabels[application.status] ?? application.status,
+              },
               { label: "Submitted", value: new Date(application.created_at).toLocaleString() },
               { label: "Updated", value: new Date(application.updated_at).toLocaleString() },
             ]}

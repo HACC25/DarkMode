@@ -123,7 +123,13 @@ export type JobApplicationScreenUpdate = {
 /**
  * Lifecycle states for a job application.
  */
-export type JobApplicationStatusEnum = 'SUBMITTED' | 'UNDER_REVIEW' | 'REJECTED' | 'WITHDRAWN';
+export type JobApplicationStatusEnum =
+  | 'SUBMITTED'
+  | 'UNDER_REVIEW'
+  | 'INTERVIEW'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'WITHDRAWN';
 
 /**
  * Database model for job listings.
