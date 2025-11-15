@@ -94,7 +94,9 @@ function CompanyApplicationSections({ applications, jobById, colors }: Applicati
   return (
     <VStack align="stretch" gap={{ base: "5", md: "6" }}>
       {orderedStatuses.map((status) => {
-        const items = applications.filter((application) => application.status === status)
+        const items = sortApplicationsByScore(
+          applications.filter((application) => application.status === status),
+        )
         return (
           <CardShell key={status} colors={colors}>
             <VStack align="stretch" gap="4">
@@ -147,6 +149,34 @@ function ApplicantApplicationList({ applications, jobById, colors }: Application
   )
 }
 
+const getApplicationScore = (application: JobApplicationRead) => {
+  const rawScore = application.screen?.score
+  if (rawScore === undefined || rawScore === null) {
+    return null
+  }
+  const normalizedScore = typeof rawScore === "number" ? rawScore : Number(rawScore)
+  return Number.isNaN(normalizedScore) ? null : normalizedScore
+}
+
+const sortApplicationsByScore = (applications: JobApplicationRead[]) => {
+  return applications.slice().sort((a, b) => {
+    const scoreA = getApplicationScore(a)
+    const scoreB = getApplicationScore(b)
+    if (scoreA !== null && scoreB !== null && scoreA !== scoreB) {
+      return scoreB - scoreA
+    }
+    if (scoreA !== null && scoreB === null) {
+      return -1
+    }
+    if (scoreA === null && scoreB !== null) {
+      return 1
+    }
+    const createdA = new Date(a.created_at).getTime()
+    const createdB = new Date(b.created_at).getTime()
+    return createdB - createdA
+  })
+}
+
 type ApplicationCardProps = {
   application: JobApplicationRead
   job: JobListing | JobListingRead | undefined
@@ -188,9 +218,7 @@ function ApplicationCard({ application, job, colors, variant, statusActions }: A
         )}
         <Text color={colors.muted}>Submitted on {submittedOn}</Text>
         <Flex justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="3">
-          <ButtonLink
-            to={`/applications/${application.id}`}
-          >
+          <ButtonLink to={`/applications/${application.id}`}>
             View details
           </ButtonLink>
           {variant === "applicant" && application.cover_letter && (
