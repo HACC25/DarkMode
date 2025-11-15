@@ -48,7 +48,7 @@ function JobDetailPage() {
       <PageShell>
         <VStack align="center" gap="4">
           <Text color={colors.muted}>We could not find that job.</Text>
-          <ButtonLink href="/jobs">Go back to jobs</ButtonLink>
+          <ButtonLink to="/jobs">Go back to jobs</ButtonLink>
         </VStack>
       </PageShell>
     )
@@ -147,9 +147,9 @@ function JobDetailPage() {
 
         <Flex justifyContent="space-between" flexWrap="wrap" gap="3">
           {user?.role === "APPLICANT" && (
-            <ButtonLink href="/jobs">Ready to apply? Go back to the listings.</ButtonLink>
+            <ButtonLink to="/jobs">Ready to apply? Go back to the listings.</ButtonLink>
           )}
-          <ButtonLink href="/jobs">Back to jobs</ButtonLink>
+          <ButtonLink to="/jobs">Back to jobs</ButtonLink>
         </Flex>
       </VStack>
     </PageShell>
@@ -188,15 +188,17 @@ function PageShell({ children }: { children: ReactNode }) {
 }
 
 type ButtonLinkProps = {
-  href: string
+  to: string
   children: ReactNode
 }
 
-function ButtonLink({ href, children }: ButtonLinkProps) {
+function ButtonLink({ to, children }: ButtonLinkProps) {
   return (
-    <Text as={Link} to={href} color="colorPalette.600" fontWeight="semibold">
-      {children}
-    </Text>
+    <Link to={to}>
+      <Text as="span" color="colorPalette.600" fontWeight="semibold">
+        {children}
+      </Text>
+    </Link>
   )
 }
 

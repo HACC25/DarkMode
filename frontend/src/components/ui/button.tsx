@@ -12,7 +12,20 @@ interface ButtonLoadingProps {
   loadingText?: React.ReactNode
 }
 
-export interface ButtonProps extends ChakraButtonProps, ButtonLoadingProps {}
+type AnchorLikeProps = Pick<
+  React.AnchorHTMLAttributes<HTMLAnchorElement>,
+  "href" | "target" | "rel"
+>
+
+type RouterLikeProps = {
+  to?: string
+}
+
+export interface ButtonProps
+  extends ChakraButtonProps,
+    ButtonLoadingProps,
+    AnchorLikeProps,
+    RouterLikeProps {}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(props, ref) {

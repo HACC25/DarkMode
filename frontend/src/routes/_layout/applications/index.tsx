@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router"
 import { useTheme } from "next-themes"
 import { useMemo, type ReactNode } from "react"
 
-import type { JobApplicationRead, JobListingRead } from "@/client"
+import type { JobApplicationRead, JobListing, JobListingRead } from "@/client"
 import useAuth from "@/hooks/useAuth"
 import { useApplicationsQuery } from "@/queries/applications"
 import { useJobListingsQuery } from "@/queries/jobs"
@@ -151,7 +151,7 @@ function ApplicantApplicationList({ applications, jobById, colors }: Application
 
 type ApplicationCardProps = {
   application: JobApplicationRead
-  job: JobListingRead | undefined
+  job: JobListing | JobListingRead | undefined
   colors: ColorTokens
   variant: "company" | "applicant"
 }
@@ -213,9 +213,11 @@ type ButtonLinkProps = {
 
 function ButtonLink({ to, params, children }: ButtonLinkProps) {
   return (
-    <Text as={Link} to={to} params={params} color="colorPalette.600" fontWeight="semibold">
-      {children}
-    </Text>
+    <Link to={to} params={params}>
+      <Text as="span" color="colorPalette.600" fontWeight="semibold">
+        {children}
+      </Text>
+    </Link>
   )
 }
 
