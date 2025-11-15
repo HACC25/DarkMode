@@ -7,6 +7,7 @@ from app.services.applications.application import JobApplicationServiceDep
 from app.services.applications.models import (
     JobApplicationCreate,
     JobApplicationRead,
+    JobApplicationStatusUpdate,
 )
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -42,3 +43,34 @@ async def submit_application_endpoint(
 ) -> JobApplicationRead:
     """Submit a job application on behalf of the current user."""
     return service.submit_application(applicant=current_user, application_in=payload)
+
+
+@router.put(
+    "/{application_id}/status",
+    response_model=JobApplicationRead,
+)
+async def update_application_status_endpoint(
+    application_id: UUID,
+    payload: JobApplicationStatusUpdate,
+    current_user: CurrentUser,
+    service: JobApplicationServiceDep,
+) -> JobApplicationRead:
+    """Transition an application's status while enforcing workflow rules."""
+    return service.update_status(
+        application_id=application_id,
+        requester=current_user,
+        new_status=payload.status,
+    )
+
+
+@router.post("/{application_id}/withdraw", response_model=JobApplicationRead)
+async def withdraw_application_endpoint(
+    application_id: UUID,
+    current_user: CurrentUser,
+    service: JobApplicationServiceDep,
+) -> JobApplicationRead:
+    """Withdraw an application regardless of its current status."""
+    return service.withdraw_application(
+        application_id=application_id,
+        requester=current_user,
+    )

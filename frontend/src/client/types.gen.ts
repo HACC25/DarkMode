@@ -87,6 +87,7 @@ export type JobApplicationScreen = {
     application_id: string;
     minimum_qualifications?: Array<ScreeningReason>;
     preferred_qualifications?: Array<ScreeningReason>;
+    score?: (number | null);
     id?: string;
     created_at?: string;
     updated_at?: string;
@@ -106,6 +107,7 @@ export type JobApplicationScreenRead = {
     application_id: string;
     minimum_qualifications?: Array<ScreeningReason>;
     preferred_qualifications?: Array<ScreeningReason>;
+    score?: (number | null);
     id: string;
     created_at: string;
     updated_at: string;
@@ -123,13 +125,7 @@ export type JobApplicationScreenUpdate = {
 /**
  * Lifecycle states for a job application.
  */
-export type JobApplicationStatusEnum =
-  | 'SUBMITTED'
-  | 'UNDER_REVIEW'
-  | 'INTERVIEW'
-  | 'ACCEPTED'
-  | 'REJECTED'
-  | 'WITHDRAWN';
+export type JobApplicationStatusEnum = 'SUBMITTED' | 'UNDER_REVIEW' | 'INTERVIEW' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 
 /**
  * Database model for job listings.

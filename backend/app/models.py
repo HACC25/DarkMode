@@ -4,7 +4,16 @@ from decimal import Decimal
 from enum import Enum
 
 from pydantic import EmailStr, Field as PydanticField
-from sqlalchemy import JSON, Column, Date, DateTime, Numeric, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    Numeric,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Field, Relationship, SQLModel
@@ -383,6 +392,10 @@ class JobApplicationScreenBase(SQLModel):
     preferred_qualifications: list[ScreeningReason] = Field(
         default_factory=list,
         sa_column=Column(ScreeningReasonListType(), nullable=False),
+    )
+    score: float | None = Field(
+        default=None,
+        sa_column=Column(Float, nullable=True),
     )
 
 

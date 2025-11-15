@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated
+from datetime import datetime, timezone
+from typing import Annotated, ClassVar
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -8,13 +9,37 @@ from sqlmodel import Session, select
 
 from app.api.deps import SessionDep
 from app.models import User, UserRoleEnum
-from app.services.applications.models import JobApplication, JobApplicationCreate
+from app.services.applications.models import (
+    JobApplication,
+    JobApplicationCreate,
+    JobApplicationStatusEnum,
+)
 from app.services.jobs.models import JobListing
 from app.services.resumes.models import Resume
 
 
 class JobApplicationService:
     """Application service encapsulating job application workflows."""
+
+    _STATUS_TRANSITIONS: ClassVar[dict[JobApplicationStatusEnum, set[JobApplicationStatusEnum]]] = {
+        JobApplicationStatusEnum.SUBMITTED: {
+            JobApplicationStatusEnum.UNDER_REVIEW,
+            JobApplicationStatusEnum.REJECTED,
+        },
+        JobApplicationStatusEnum.UNDER_REVIEW: {
+            JobApplicationStatusEnum.INTERVIEW,
+            JobApplicationStatusEnum.REJECTED,
+        },
+        JobApplicationStatusEnum.INTERVIEW: {
+            JobApplicationStatusEnum.ACCEPTED,
+            JobApplicationStatusEnum.REJECTED,
+        },
+    }
+    _TERMINAL_STATUSES: ClassVar[set[JobApplicationStatusEnum]] = {
+        JobApplicationStatusEnum.ACCEPTED,
+        JobApplicationStatusEnum.REJECTED,
+        JobApplicationStatusEnum.WITHDRAWN,
+    }
 
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -137,6 +162,101 @@ class JobApplicationService:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this job application.",
         )
+
+    def update_status(
+        self,
+        *,
+        application_id: UUID,
+        requester: User,
+        new_status: JobApplicationStatusEnum,
+    ) -> JobApplication:
+        """
+        Transition an application to the requested status if allowed.
+        """
+        application = self._session.get(JobApplication, application_id)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job application not found.",
+            )
+
+        if application.status == new_status:
+            return application
+
+        if application.status in self._TERMINAL_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Application is in a terminal state and cannot be updated.",
+            )
+
+        allowed = self._STATUS_TRANSITIONS.get(application.status, set())
+        if new_status not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Cannot transition application from "
+                    f"{application.status} to {new_status}."
+                ),
+            )
+
+        job_listing = self._session.get(JobListing, application.job_listing_id)
+        if not requester.is_superuser:
+            if not job_listing or job_listing.company_id != requester.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only the owning company may change the status.",
+                )
+
+        return self._persist_status_change(application, new_status)
+
+    def withdraw_application(
+        self,
+        *,
+        application_id: UUID,
+        requester: User,
+    ) -> JobApplication:
+        """
+        Allow an applicant (or superuser) to withdraw their application.
+        """
+        application = self._session.get(JobApplication, application_id)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job application not found.",
+            )
+
+        if not requester.is_superuser and application.applicant_id != requester.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to withdraw this application.",
+            )
+
+        if application.status == JobApplicationStatusEnum.WITHDRAWN:
+            return application
+
+        return self._persist_status_change(
+            application, JobApplicationStatusEnum.WITHDRAWN
+        )
+
+    def _persist_status_change(
+        self,
+        application: JobApplication,
+        new_status: JobApplicationStatusEnum,
+    ) -> JobApplication:
+        """Persist a status change and handle failures uniformly."""
+        application.status = new_status
+        application.updated_at = datetime.now(timezone.utc)
+        try:
+            self._session.add(application)
+            self._session.commit()
+            self._session.refresh(application)
+            return application
+        except Exception as exc:  # pragma: no cover
+            self._session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update application status: {exc}",
+            ) from exc
 
 
 def get_job_application_service(

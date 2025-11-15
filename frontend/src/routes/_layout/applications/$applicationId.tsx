@@ -162,6 +162,9 @@ function ApplicationDetailPage() {
             </Heading>
             {screen ? (
               <VStack align="start" gap="2">
+                {screen.score !== undefined && screen.score !== null && (
+                  <Text fontWeight="medium">Score: {screen.score}</Text>
+                )}
                 {screen.created_at && (
                   <Text fontWeight="medium">
                     Ran on {new Date(screen.created_at).toLocaleString()}
@@ -217,7 +220,6 @@ function ApplicationDetailPage() {
           onSaveResults={handleSaveQualifications}
           isSaving={updateScreen.isPending}
         />
-
         {resume && (
           <Box
             borderWidth="1px"

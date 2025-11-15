@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, TypedDict
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -18,11 +18,33 @@ from app.services.screens.models import (
     JobApplicationScreenAgentPayload,
     JobApplicationScreenCreate,
     JobApplicationScreenUpdate,
+    ScreeningReason,
+    ScreeningReasonStatusEnum,
 )
+
+
+class JobApplicationScore(TypedDict):
+    minimum_score: int
+    minimum_max_score: int
+    preferred_score: int
+    preferred_max_score: int
+    total_score: int
+    max_score: int
+    match_percentage: float
 
 
 class JobApplicationScreeningService:
     """Service responsible for screening applications against job listings."""
+
+    _STATUS_POINTS = {
+        ScreeningReasonStatusEnum.HIGHLY_QUALIFIED: 4,
+        ScreeningReasonStatusEnum.QUALIFIED: 3,
+        ScreeningReasonStatusEnum.MEETS: 2,
+        ScreeningReasonStatusEnum.NOT_QUALIFIED: 0,
+    }
+    _MAX_STATUS_POINTS = max(_STATUS_POINTS.values())
+    _MINIMUM_WEIGHT = 2
+    _PREFERRED_WEIGHT = 1
 
     def __init__(self, session: Session, screen_agent: Agent) -> None:
         self._session = session
@@ -130,6 +152,7 @@ class JobApplicationScreeningService:
             minimum_qualifications=structured_screen.minimum_qualifications,
             preferred_qualifications=structured_screen.preferred_qualifications,
         )
+        self._update_screen_score(screening)
 
         try:
             self._session.add(screening)
@@ -199,6 +222,8 @@ class JobApplicationScreeningService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No screening results provided.",
             )
+
+        self._update_screen_score(screen)
 
         try:
             application.status = JobApplicationStatusEnum.UNDER_REVIEW
@@ -289,6 +314,115 @@ class JobApplicationScreeningService:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this screening result.",
+        )
+
+    def score_application(
+        self,
+        *,
+        application_id: UUID,
+        requester: User,
+    ) -> JobApplicationScore:
+        """
+        Calculate a weighted score for an application's screening results.
+        """
+        application = self._session.get(JobApplication, application_id)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job application not found.",
+            )
+
+        job_listing = self._session.get(JobListing, application.job_listing_id)
+        if not job_listing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job listing not found for this application.",
+            )
+
+        if (
+            not requester.is_superuser
+            and requester.id
+            not in {application.applicant_id, job_listing.company_id}
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to score this application.",
+            )
+
+        screen = self._session.exec(
+            select(JobApplicationScreen).where(
+                JobApplicationScreen.application_id == application.id
+            )
+        ).first()
+
+        if not screen:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="This application has not been screened yet.",
+            )
+
+        score_payload = self._update_screen_score(screen)
+
+        try:
+            self._session.add(screen)
+            self._session.commit()
+            self._session.refresh(screen)
+        except Exception as exc:  # pragma: no cover - re-raised as HTTP error
+            self._session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update stored score: {exc}",
+            ) from exc
+
+        return score_payload
+
+    def _score_reasons(
+        self,
+        reasons: list[ScreeningReason],
+        weight: int,
+    ) -> tuple[int, int]:
+        """Return the earned and maximum points for a list of reasons."""
+        if not reasons:
+            return 0, 0
+
+        score = sum(
+            self._STATUS_POINTS.get(reason.status, 0) * weight for reason in reasons
+        )
+        max_score = len(reasons) * self._MAX_STATUS_POINTS * weight
+        return score, max_score
+
+    def _update_screen_score(
+        self,
+        screen: JobApplicationScreen,
+    ) -> JobApplicationScore:
+        """Recalculate and persist the score on the screen record."""
+        score_data = self._calculate_score(screen)
+        screen.score = score_data["match_percentage"]
+        return score_data
+
+    def _calculate_score(self, screen: JobApplicationScreen) -> JobApplicationScore:
+        """Aggregate the minimum and preferred qualification scores."""
+        min_score, min_max = self._score_reasons(
+            screen.minimum_qualifications, self._MINIMUM_WEIGHT
+        )
+        pref_score, pref_max = self._score_reasons(
+            screen.preferred_qualifications, self._PREFERRED_WEIGHT
+        )
+
+        total_score = min_score + pref_score
+        max_score = min_max + pref_max
+        match_percentage = (
+            round((total_score / max_score) * 100, 2) if max_score else 0.0
+        )
+
+        return JobApplicationScore(
+            minimum_score=min_score,
+            minimum_max_score=min_max,
+            preferred_score=pref_score,
+            preferred_max_score=pref_max,
+            total_score=total_score,
+            max_score=max_score,
+            match_percentage=match_percentage,
         )
 
 
