@@ -22,18 +22,40 @@ function Navbar() {
   // }
 
   return (
-    <Box borderBottomWidth="1px">
-      <Flex align="center" justify="space-between" px={4} py={3}>
+    <Box borderBottomWidth="1px" borderBottomColor="ui.main">
+      <Flex
+        align="center"
+        bg="ui.main"
+        color="white"
+        justify="space-between"
+        px={4}
+        py={3}
+      >
         <HStack gap={4}>
-          <Link to="/">
-            <Text fontWeight="bold">AppScreen</Text>
-          </Link>
+          <Text
+            as={Link}
+            to="/"
+            fontWeight="bold"
+            fontSize="xl"
+            textDecoration="none"
+            _hover={{ color: "whiteAlpha.800" }}
+          >
+            AppScreen
+          </Text>
           {authenticated && (
             <HStack gap={3}>
               {navLinks.map((link) => (
-                <Link key={link.to} to={link.to}>
+                <Text
+                  key={link.to}
+                  as={Link}
+                  to={link.to}
+                  fontWeight="medium"
+                  fontSize="lg"
+                  textDecoration="none"
+                  _hover={{ color: "whiteAlpha.800" }}
+                >
                   {link.label}
-                </Link>
+                </Text>
               ))}
             </HStack>
           )}

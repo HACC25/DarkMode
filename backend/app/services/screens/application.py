@@ -24,12 +24,12 @@ from app.services.screens.models import (
 
 
 class JobApplicationScore(TypedDict):
-    minimum_score: int
-    minimum_max_score: int
-    preferred_score: int
-    preferred_max_score: int
-    total_score: int
-    max_score: int
+    minimum_score: float
+    minimum_max_score: float
+    preferred_score: float
+    preferred_max_score: float
+    total_score: float
+    max_score: float
     match_percentage: float
 
 
@@ -391,6 +391,13 @@ class JobApplicationScreeningService:
         max_score = len(reasons) * self._MAX_STATUS_POINTS * weight
         return score, max_score
 
+    @staticmethod
+    def _normalize_score(score: int, max_score: int) -> float:
+        """Return a percentage-based score rounded to two decimals."""
+        if max_score == 0:
+            return 0.0
+        return round((score / max_score) * 100, 2)
+
     def _update_screen_score(
         self,
         screen: JobApplicationScreen,
@@ -411,17 +418,19 @@ class JobApplicationScreeningService:
 
         total_score = min_score + pref_score
         max_score = min_max + pref_max
-        match_percentage = (
-            round((total_score / max_score) * 100, 2) if max_score else 0.0
-        )
+        min_percentage = self._normalize_score(min_score, min_max)
+        pref_percentage = self._normalize_score(pref_score, pref_max)
+        match_percentage = self._normalize_score(total_score, max_score)
+        has_minimums = min_max > 0
+        has_preferred = pref_max > 0
 
         return JobApplicationScore(
-            minimum_score=min_score,
-            minimum_max_score=min_max,
-            preferred_score=pref_score,
-            preferred_max_score=pref_max,
-            total_score=total_score,
-            max_score=max_score,
+            minimum_score=min_percentage,
+            minimum_max_score=100.0 if has_minimums else 0.0,
+            preferred_score=pref_percentage,
+            preferred_max_score=100.0 if has_preferred else 0.0,
+            total_score=match_percentage,
+            max_score=100.0 if max_score else 0.0,
             match_percentage=match_percentage,
         )
 
