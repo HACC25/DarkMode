@@ -1,8 +1,10 @@
-import { Box, Flex, HStack, Text } from "@chakra-ui/react"
+import { Box, Flex, HStack, Text, chakra } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import UserMenu from "./UserMenu"
+
+const RouterLink = chakra(Link)
 
 function Navbar() {
   const { user } = useAuth()
@@ -32,8 +34,7 @@ function Navbar() {
         py={3}
       >
         <HStack gap={4}>
-          <Text
-            as={Link}
+          <RouterLink
             to="/"
             fontWeight="bold"
             fontSize="xl"
@@ -41,13 +42,12 @@ function Navbar() {
             _hover={{ color: "whiteAlpha.800" }}
           >
             AppScreen
-          </Text>
+          </RouterLink>
           {authenticated && (
             <HStack gap={3}>
               {navLinks.map((link) => (
-                <Text
+                <RouterLink
                   key={link.to}
-                  as={Link}
                   to={link.to}
                   fontWeight="medium"
                   fontSize="lg"
@@ -55,7 +55,7 @@ function Navbar() {
                   _hover={{ color: "whiteAlpha.800" }}
                 >
                   {link.label}
-                </Text>
+                </RouterLink>
               ))}
             </HStack>
           )}
