@@ -1,4 +1,4 @@
-import { Box, Flex, HStack, Text, chakra } from "@chakra-ui/react"
+import { Box, Flex, HStack, chakra } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
