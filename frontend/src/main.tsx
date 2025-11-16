@@ -7,7 +7,24 @@ import { routeTree } from "./routeTree.gen"
 import { ApiError, OpenAPI } from "./client"
 import { CustomProvider } from "./components/ui/provider"
 
-OpenAPI.BASE = import.meta.env.VITE_API_URL
+const envApiUrl = import.meta.env.VITE_API_URL
+const isBrowser = typeof window !== "undefined"
+const isLocalHostname = (hostname: string) =>
+  ["localhost", "127.0.0.1", "::1"].includes(hostname.toLowerCase())
+
+const fallbackApiUrl = (() => {
+  if (!isBrowser) {
+    return envApiUrl
+  }
+
+  if (isLocalHostname(window.location.hostname)) {
+    return "http://localhost:8000"
+  }
+
+  return `${window.location.protocol}//api.${window.location.hostname}`
+})()
+
+OpenAPI.BASE = envApiUrl || fallbackApiUrl
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }
