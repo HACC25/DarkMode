@@ -334,7 +334,7 @@ class JobApplicationRead(JobApplicationBase):
     status: JobApplicationStatusEnum
     created_at: datetime
     updated_at: datetime
-    resume: "Resume"
+    resume: "Resume | None"
     applicant: User
     screen: "JobApplicationScreen | None"
     job_listing: JobListing
